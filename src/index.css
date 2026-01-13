@@ -6,9 +6,12 @@
 
 :root {
   /* Dark Mode (Default) */
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-card: rgba(30, 41, 59, 0.7);
+  --bg-primary: #020617;
+  /* Slate 950 */
+  --bg-secondary: #0f172a;
+  /* Slate 900 */
+  --bg-card: rgba(2, 6, 23, 0.7);
+  /* Deep dark with transparency */
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --accent-primary: #10b981;

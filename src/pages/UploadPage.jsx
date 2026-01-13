@@ -12,6 +12,8 @@ const UploadPage = () => {
     const [progress, setProgress] = useState(0);
     const [stage, setStage] = useState(0); // 0: Idle, 1: Uploading, 2: Processing, 3: Complete
 
+    const [patientType, setPatientType] = useState('adult'); // 'adult' | 'pediatric'
+
     const handleAnalyze = () => {
         if (!file) return;
         setAnalyzing(true);
@@ -43,10 +45,10 @@ const UploadPage = () => {
             setStage(3);
             setTimeout(() => {
                 const fileUrl = URL.createObjectURL(file);
-                navigate('/dashboard', { state: { fileUrl } });
+                navigate('/dashboard', { state: { fileUrl, patientType } });
             }, 1000);
         }
-    }, [progress, stage, navigate]);
+    }, [progress, stage, navigate, file, patientType]);
 
     return (
         <div className="min-h-screen pt-24 pb-12">
@@ -57,6 +59,31 @@ const UploadPage = () => {
                 </div>
 
                 <Card className="min-h-[500px] flex flex-col justify-center gap-8">
+                    {/* Patient Type Toggle */}
+                    <div className="flex flex-col items-center gap-3">
+                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Select Patient Type</span>
+                        <div className="bg-slate-100 dark:bg-slate-900/50 p-1.5 rounded-xl inline-flex border border-slate-200 dark:border-slate-800">
+                            <button
+                                onClick={() => setPatientType('adult')}
+                                className={`px-8 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${patientType === 'adult'
+                                        ? 'bg-white dark:bg-slate-800 text-emerald-500 shadow-sm scale-100'
+                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                    }`}
+                            >
+                                Adult
+                            </button>
+                            <button
+                                onClick={() => setPatientType('pediatric')}
+                                className={`px-8 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${patientType === 'pediatric'
+                                        ? 'bg-white dark:bg-slate-800 text-emerald-500 shadow-sm scale-100'
+                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                    }`}
+                            >
+                                Pediatric
+                            </button>
+                        </div>
+                    </div>
+
                     <FileUpload onFileSelect={(f) => setFile(f)} />
 
                     {file && (
