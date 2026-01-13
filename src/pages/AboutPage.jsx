@@ -37,7 +37,7 @@ const AboutPage = () => {
                     ))}
                 </div>
 
-                <div className="mt-20 mb-12">
+                {/* <div className="mt-20 mb-12">
                     <h2 className="text-3xl font-bold mb-12 text-center">Meet the Team</h2>
                     <div className="grid md:grid-cols-3 gap-8">
                         {[
@@ -54,7 +54,7 @@ const AboutPage = () => {
                             </Card>
                         ))}
                     </div>
-                </div>
+                </div> */}
 
                 <div className="mt-20 p-8 rounded-2xl bg-slate-900 text-white text-center relative overflow-hidden">
                     <div className="relative z-10">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Menu, X, Stethoscope, Settings } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import Button from './Button';
@@ -11,6 +11,11 @@ const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const { currentUser, logout } = useAuth();
     const { actions } = useHeader();
+    const location = useLocation();
+
+    // Define pages where nav links should be visible
+    const publicPaths = ['/', '/about', '/promts', '/events'];
+    const shouldShowNavLinks = publicPaths.includes(location.pathname);
 
     const navLinks = [
         { name: 'Home', path: '/' },
@@ -34,8 +39,8 @@ const Navbar = () => {
 
                 {/* Desktop Nav */}
                 <div className="hidden md:flex items-center gap-8">
-                    {!currentUser && (
-                        <div className="flex gap-6">
+                    {shouldShowNavLinks && (
+                        <div className="flex items-center gap-6">
                             {navLinks.map((link) => (
                                 <NavLink
                                     key={link.name}
@@ -95,7 +100,7 @@ const Navbar = () => {
             {isOpen && (
                 <div className="md:hidden glass-panel border-t border-white/10 p-4 absolute w-full left-0">
                     <div className="flex flex-col gap-4">
-                        {!currentUser && navLinks.map((link) => (
+                        {shouldShowNavLinks && navLinks.map((link) => (
                             <NavLink
                                 key={link.name}
                                 to={link.path}

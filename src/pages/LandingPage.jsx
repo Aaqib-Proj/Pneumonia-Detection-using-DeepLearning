@@ -139,7 +139,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Testimonials Section */}
+            {/* Testimonials Section
             <section className="py-20 bg-slate-50/50 dark:bg-slate-900/50">
                 <div className="container mx-auto px-4">
                     <div className="text-center mb-16">
@@ -177,7 +177,7 @@ const LandingPage = () => {
                         ))}
                     </div>
                 </div>
-            </section>
+            </section> */}
 
             {/* FAQ Section */}
             <section className="py-20">

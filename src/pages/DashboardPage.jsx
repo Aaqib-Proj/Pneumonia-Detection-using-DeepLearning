@@ -7,6 +7,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { useHeader } from '../context/HeaderContext';
+import MedicalReport from '../components/MedicalReport';
 
 const data = [
     { name: 'Stage 1', value: 20 },
@@ -19,7 +20,7 @@ const data = [
 ];
 
 const DashboardPage = () => {
-    const dashboardRef = useRef(null);
+    const reportRef = useRef(null);
     const location = useLocation();
     const [imageSrc, setImageSrc] = useState(null);
     const [isFullScreen, setIsFullScreen] = useState(false);
@@ -32,31 +33,39 @@ const DashboardPage = () => {
     }, [location]);
 
     const handleDownloadPDF = async () => {
-        const element = dashboardRef.current;
+        const element = reportRef.current;
         if (!element) return;
 
-        // Hide full screen modal if open before capturing
-        if (isFullScreen) setIsFullScreen(false);
+        try {
+            // Ensure images are loaded before capturing
+            await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Wait for state update
-        setTimeout(async () => {
-            const canvas = await html2canvas(element, { scale: 2 });
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save('pneumascan-report.pdf');
-        }, 100);
+            pdf.save('PneumaScan_Professional_Report.pdf');
+        } catch (error) {
+            console.error("PDF Generation failed:", error);
+            alert("Failed to generate PDF report. Please try again.");
+        }
     };
 
     const handleShare = async () => {
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'PneumaScan Report',
-                    text: 'Here is the AI Analysis Report for Pneumonia Detection.',
+                    title: 'PneumaScan Medical Report',
+                    text: 'Review the AI-generated diagnostic report for Patient #PNEUMA-8829.',
                     url: window.location.href,
                 });
             } catch (err) {
@@ -74,19 +83,48 @@ const DashboardPage = () => {
 
     useEffect(() => {
         setActions([
-            { label: 'Download', icon: Download, onClick: handleDownloadPDF },
-            { label: 'Share', icon: Share2, onClick: handleShare },
-            { label: 'Print', icon: Printer, onClick: handlePrint }
+            { label: 'Download Report', icon: Download, onClick: handleDownloadPDF },
+            { label: 'Share Report', icon: Share2, onClick: handleShare },
+            { label: 'Print Report', icon: Printer, onClick: handlePrint }
         ]);
 
         return () => setActions([]);
-    }, [imageSrc, isFullScreen, setActions]); // Re-register if state crucial to actions changes
+    }, [imageSrc, isFullScreen, setActions]);
 
     return (
-        <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-900 transition-colors" ref={dashboardRef}>
+        <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-900 transition-colors">
+            {/* Print Styles */}
+            <style>{`
+                @media print {
+                    body * {
+                        visibility: hidden;
+                    }
+                    #printable-report-container, #printable-report-container * {
+                        visibility: visible;
+                    }
+                    #printable-report-container {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        margin: 0;
+                        padding: 0;
+                        background: white;
+                    }
+                    nav, header, footer, .no-print {
+                        display: none !important;
+                    }
+                }
+            `}</style>
+
+            {/* Hidden Professional Report Component for PDF/Print */}
+            <div id="printable-report-container" className="fixed top-0 left-[-10000px] w-[210mm] bg-white z-[9999]">
+                <MedicalReport ref={reportRef} imageSrc={imageSrc} data={{ confidence: 0.98 }} />
+            </div>
+
             {/* Full Screen Modal */}
             {isFullScreen && imageSrc && (
-                <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm" data-html2canvas-ignore="true" onClick={() => setIsFullScreen(false)}>
+                <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm no-print" onClick={() => setIsFullScreen(false)}>
                     <button
                         className="absolute top-6 right-6 text-white hover:text-emerald-500 transition-colors bg-black/50 p-2 rounded-full"
                         onClick={(e) => { e.stopPropagation(); setIsFullScreen(false); }}
@@ -102,7 +140,7 @@ const DashboardPage = () => {
                 </div>
             )}
 
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto px-4 print:hidden">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>
                         <h1 className="text-3xl font-bold">Results Dashboard</h1>
