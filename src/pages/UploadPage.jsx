@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FileUpload from '../components/FileUpload';
+import { uploadXRay } from '../services/api';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import { CheckCircle2, Loader2 } from 'lucide-react';
@@ -31,7 +32,7 @@ const UploadPage = () => {
         }));
     };
 
-    const handleAnalyze = (e) => {
+    const handleAnalyze = async (e) => {
         e.preventDefault();
         if (!file) {
             alert("Please upload an X-Ray image first.");
@@ -46,38 +47,48 @@ const UploadPage = () => {
 
         setAnalyzing(true);
         setStage(1);
-        // Simulate process
+        setProgress(0);
+
+        try {
+            // Start fake progress to 90%
+            const progressInterval = setInterval(() => {
+                setProgress((prev) => {
+                    if (prev >= 90) return 90;
+                    return prev + Math.random() * 5;
+                });
+            }, 500);
+
+            // Call Real API
+            // Note: The backend returns: { meta, diagnosis, quantitative, clinical, heatmap_base64 }
+            const report = await uploadXRay(file, formData.patientType);
+
+            clearInterval(progressInterval);
+            setProgress(100);
+            setStage(3);
+
+            // Short delay to show 100% before navigating
+            setTimeout(() => {
+                navigate('/dashboard', {
+                    state: {
+                        fileUrl: URL.createObjectURL(file), // Original file for local preview if needed
+                        patientData: formData,
+                        report: report
+                    }
+                });
+            }, 1000);
+
+        } catch (error) {
+            console.error(error);
+            alert("Analysis failed. Please ensure the backend is running.");
+            setAnalyzing(false);
+            setStage(0);
+            setProgress(0);
+        }
     };
 
     useEffect(() => {
-        if (analyzing) {
-            const interval = setInterval(() => {
-                setProgress((prev) => {
-                    if (prev >= 100) {
-                        clearInterval(interval);
-                        return 100;
-                    }
-                    // Speed variation logic
-                    const increment = Math.random() * 5 + 1;
-                    return Math.min(prev + increment, 100);
-                });
-            }, 100);
-
-            return () => clearInterval(interval);
-        }
-    }, [analyzing]);
-
-    useEffect(() => {
         if (progress > 30 && stage === 1) setStage(2);
-        if (progress === 100 && stage === 2) {
-            setStage(3);
-            setTimeout(() => {
-                const fileUrl = URL.createObjectURL(file);
-                // Pass form data and file URL to dashboard
-                navigate('/dashboard', { state: { fileUrl, patientData: formData } });
-            }, 1000);
-        }
-    }, [progress, stage, navigate, file, formData]);
+    }, [progress, stage]);
 
     return (
         <div className="min-h-screen pt-24 pb-12">
