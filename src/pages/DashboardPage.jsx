@@ -24,11 +24,15 @@ const DashboardPage = () => {
     const location = useLocation();
     const [imageSrc, setImageSrc] = useState(null);
     const [isFullScreen, setIsFullScreen] = useState(false);
+    const [patientData, setPatientData] = useState(null);
     const { setActions } = useHeader();
 
     useEffect(() => {
         if (location.state?.fileUrl) {
             setImageSrc(location.state.fileUrl);
+        }
+        if (location.state?.patientData) {
+            setPatientData(location.state.patientData);
         }
     }, [location]);
 
@@ -119,7 +123,7 @@ const DashboardPage = () => {
 
             {/* Hidden Professional Report Component for PDF/Print */}
             <div id="printable-report-container" className="fixed top-0 left-[-10000px] w-[210mm] bg-white z-[9999]">
-                <MedicalReport ref={reportRef} imageSrc={imageSrc} data={{ confidence: 0.98 }} />
+                <MedicalReport ref={reportRef} imageSrc={imageSrc} data={{ confidence: 0.98 }} patientData={patientData} />
             </div>
 
             {/* Full Screen Modal */}
@@ -233,7 +237,8 @@ const DashboardPage = () => {
                             Clinical Findings
                         </h3>
                         <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-                            <p><strong className="text-gray-900 dark:text-white">Patient ID:</strong> PNEUMA-8829</p>
+                            <p><strong className="text-gray-900 dark:text-white">Patient:</strong> {patientData ? patientData.name : 'Unknown'}</p>
+                            <p><strong className="text-gray-900 dark:text-white">ID:</strong> PNEUMA-8829</p>
                             <p><strong className="text-gray-900 dark:text-white">Scan Date:</strong> {new Date().toLocaleDateString()}</p>
                             <div className="h-px bg-gray-200 dark:bg-gray-700 my-2"></div>
                             <p><strong>Right Upper Lobe:</strong> Increased opacity observed. Suggestive of lobar pneumonia.</p>

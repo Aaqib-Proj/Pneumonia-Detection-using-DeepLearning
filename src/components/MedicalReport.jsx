@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
 import { Stethoscope } from 'lucide-react';
 
-const MedicalReport = forwardRef(({ data, imageSrc }, ref) => {
+const MedicalReport = forwardRef(({ data, imageSrc, patientData }, ref) => {
     const currentDate = new Date().toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
@@ -9,6 +9,17 @@ const MedicalReport = forwardRef(({ data, imageSrc }, ref) => {
         hour: '2-digit',
         minute: '2-digit'
     });
+
+    // Default or Fallback Data if not provided
+    const patientInfo = {
+        name: patientData?.name || 'Anonymous Patient',
+        age: patientData?.age || '--',
+        gender: patientData?.gender || '--',
+        weight: patientData?.weight || '--',
+        email: patientData?.email || '--',
+        phone: patientData?.phone || '--',
+        id: 'PT-2026-' + Math.floor(Math.random() * 1000)
+    };
 
     return (
         <div ref={ref} className="bg-white text-black p-8 max-w-[210mm] mx-auto hidden-on-screen print-visible">
@@ -37,15 +48,27 @@ const MedicalReport = forwardRef(({ data, imageSrc }, ref) => {
                     <div className="space-y-1">
                         <div className="flex justify-between py-1 border-b border-slate-200 border-dashed">
                             <span className="text-slate-500 text-sm">Name</span>
-                            <span className="font-semibold text-slate-900 text-sm">Anonymous Adult</span>
+                            <span className="font-semibold text-slate-900 text-sm capitalize">{patientInfo.name}</span>
                         </div>
                         <div className="flex justify-between py-1 border-b border-slate-200 border-dashed">
-                            <span className="text-slate-500 text-sm">Age/Sex</span>
-                            <span className="font-semibold text-slate-900 text-sm">45 / Male</span>
+                            <span className="text-slate-500 text-sm">Age / Gender</span>
+                            <span className="font-semibold text-slate-900 text-sm capitalize">{patientInfo.age} / {patientInfo.gender}</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-slate-200 border-dashed">
+                            <span className="text-slate-500 text-sm">Weight</span>
+                            <span className="font-semibold text-slate-900 text-sm">{patientInfo.weight} kg</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-slate-200 border-dashed">
+                            <span className="text-slate-500 text-sm">Contact</span>
+                            <span className="font-semibold text-slate-900 text-sm">{patientInfo.phone}</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-slate-200 border-dashed">
+                            <span className="text-slate-500 text-sm">Email</span>
+                            <span className="font-semibold text-slate-900 text-sm lowercase">{patientInfo.email}</span>
                         </div>
                         <div className="flex justify-between py-1 border-b border-slate-200 border-dashed">
                             <span className="text-slate-500 text-sm">Patient ID</span>
-                            <span className="font-semibold text-slate-900 text-sm">PT-2024-892</span>
+                            <span className="font-semibold text-slate-900 text-sm">{patientInfo.id}</span>
                         </div>
                     </div>
                 </div>
@@ -54,15 +77,16 @@ const MedicalReport = forwardRef(({ data, imageSrc }, ref) => {
                     <div className="space-y-1">
                         <div className="flex justify-between py-1 border-b border-slate-200 border-dashed">
                             <span className="text-slate-500 text-sm">Modality</span>
-                            <span className="font-semibold text-slate-900 text-sm">Check X-Ray (CXR)</span>
+                            <span className="font-semibold text-slate-900 text-sm">Chest X-Ray (CXR)</span>
                         </div>
                         <div className="flex justify-between py-1 border-b border-slate-200 border-dashed">
                             <span className="text-slate-500 text-sm">View</span>
                             <span className="font-semibold text-slate-900 text-sm">Posteroanterior (PA)</span>
                         </div>
+                        {/* Removed Referring Dr. as requested */}
                         <div className="flex justify-between py-1 border-b border-slate-200 border-dashed">
-                            <span className="text-slate-500 text-sm">Referring Dr.</span>
-                            <span className="font-semibold text-slate-900 text-sm">Dr. Sarah Smith</span>
+                            <span className="text-slate-500 text-sm">Patient Type</span>
+                            <span className="font-semibold text-slate-900 text-sm capitalize">{patientData?.patientType || 'Adult'}</span>
                         </div>
                     </div>
                 </div>
