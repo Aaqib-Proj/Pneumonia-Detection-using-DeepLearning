@@ -66,6 +66,34 @@ const UploadPage = () => {
             setProgress(100);
             setStage(3);
 
+            // Convert to Base64 for history
+            const toBase64 = (file) => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+
+            try {
+                const base64Image = await toBase64(file);
+                // Save to History
+                const historyItem = {
+                    id: report.meta?.id || 'UNKNOWN',
+                    timestamp: Date.now(),
+                    patientData: formData,
+                    diagnosis: report.diagnosis?.label || 'Unknown',
+                    confidence: report.diagnosis?.confidence || '--',
+                    reportData: report,
+                    originalImageBase64: base64Image
+                };
+
+                const existingHistory = JSON.parse(localStorage.getItem('pneuma_history') || '[]');
+                const newHistory = [historyItem, ...existingHistory].slice(0, 10); // Keep last 10 
+                localStorage.setItem('pneuma_history', JSON.stringify(newHistory));
+            } catch (err) {
+                console.error("Failed to save history", err);
+            }
+
             // Short delay to show 100% before navigating
             setTimeout(() => {
                 navigate('/dashboard', {

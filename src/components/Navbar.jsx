@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Menu, X, Stethoscope, Settings, ChevronLeft } from 'lucide-react';
+import { Menu, X, Stethoscope, Settings, ChevronLeft, History } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import Button from './Button';
 
@@ -84,11 +84,18 @@ const Navbar = () => {
                                 <Button>Sign Up</Button>
                             </NavLink>
                         ) : (
-                            <NavLink to="/settings">
-                                <Button variant="ghost" size="icon" title="Settings">
-                                    <Settings size={20} />
-                                </Button>
-                            </NavLink>
+                            <div className="flex items-center gap-2">
+                                <NavLink to="/history">
+                                    <Button variant="ghost" size="icon" title="History">
+                                        <History size={20} />
+                                    </Button>
+                                </NavLink>
+                                <NavLink to="/settings">
+                                    <Button variant="ghost" size="icon" title="Settings">
+                                        <Settings size={20} />
+                                    </Button>
+                                </NavLink>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -136,6 +143,11 @@ const Navbar = () => {
                                             {action.label}
                                         </Button>
                                     ))}
+                                    <NavLink to="/history" onClick={() => setIsOpen(false)}>
+                                        <Button variant="outline" className="w-full justify-center gap-2">
+                                            <History size={18} /> History
+                                        </Button>
+                                    </NavLink>
                                     <NavLink to="/settings" onClick={() => setIsOpen(false)}>
                                         <Button variant="outline" className="w-full justify-center gap-2">
                                             <Settings size={18} /> Settings

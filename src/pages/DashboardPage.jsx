@@ -23,6 +23,7 @@ const DashboardPage = () => {
     const reportRef = useRef(null);
     const location = useLocation();
     const [imageSrc, setImageSrc] = useState(null);
+    const [originalImageSrc, setOriginalImageSrc] = useState(null);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [patientData, setPatientData] = useState(null);
     const { setActions } = useHeader();
@@ -32,13 +33,14 @@ const DashboardPage = () => {
     useEffect(() => {
         if (location.state?.fileUrl) {
             setImageSrc(location.state.fileUrl);
+            setOriginalImageSrc(location.state.fileUrl);
         }
         if (location.state?.patientData) {
             setPatientData(location.state.patientData);
         }
         if (location.state?.report) {
             setReport(location.state.report);
-            // If backend provides a heatmap, use it as the primary image
+            // If backend provides a heatmap, use it as the primary image for Dashboard, but keep original for Report
             if (location.state.report.heatmap_base64) {
                 setImageSrc(location.state.report.heatmap_base64);
             }
@@ -102,7 +104,7 @@ const DashboardPage = () => {
 
             {/* Hidden Professional Report Component */}
             <div id="printable-report-container" className="fixed top-0 left-[-10000px] w-[210mm] bg-white z-[9999]">
-                <MedicalReport ref={reportRef} imageSrc={imageSrc} data={report?.diagnosis || { confidence: 0.98 }} patientData={patientData} report={report} />
+                <MedicalReport ref={reportRef} imageSrc={originalImageSrc || imageSrc} data={report?.diagnosis || { confidence: 0.98 }} patientData={patientData} report={report} />
             </div>
 
             {/* Full Screen Modal ... existing code ... */}

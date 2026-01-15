@@ -1,9 +1,12 @@
 const API_URL = "http://localhost:8000/api";
 
-export const uploadXRay = async (file, patientType = 'pediatric') => {
+export const uploadXRay = async (file, patientType = 'pediatric', patientData = {}) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("patient_type", patientType);
+    if (patientData.name) formData.append("patient_name", patientData.name);
+    if (patientData.age) formData.append("patient_age", patientData.age);
+    if (patientData.gender) formData.append("patient_gender", patientData.gender);
 
     try {
         const response = await fetch(`${API_URL}/analyze`, {
@@ -20,5 +23,29 @@ export const uploadXRay = async (file, patientType = 'pediatric') => {
     } catch (error) {
         console.error("Upload failed", error);
         throw error;
+    }
+};
+
+export const fetchHistory = async () => {
+    try {
+        const response = await fetch(`${API_URL}/history`);
+        if (!response.ok) throw new Error("Failed to fetch history");
+        return await response.json();
+    } catch (error) {
+        console.error("History fetch failed", error);
+        return [];
+    }
+};
+
+export const deleteReport = async (id) => {
+    try {
+        const response = await fetch(`${API_URL}/history/${id}`, {
+            method: "DELETE"
+        });
+        if (!response.ok) throw new Error("Failed to delete report");
+        return true;
+    } catch (error) {
+        console.error("Delete failed", error);
+        return false;
     }
 };

@@ -12,6 +12,7 @@ import LoginPage from './pages/LoginPage';
 import AboutPage from './pages/AboutPage';
 import TermsPage from './pages/TermsPage';
 import SettingsPage from './pages/SettingsPage';
+import HistoryPage from './pages/HistoryPage';
 import { HeaderProvider } from './context/HeaderContext';
 
 // Protected Route Component
@@ -51,6 +52,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <DashboardPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/history"
+                    element={
+                      <ProtectedRoute>
+                        <HistoryPage />
                       </ProtectedRoute>
                     }
                   />
