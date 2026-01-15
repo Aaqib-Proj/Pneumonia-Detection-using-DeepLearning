@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Menu, X, Stethoscope, Settings } from 'lucide-react';
+import { Menu, X, Stethoscope, Settings, ChevronLeft } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import Button from './Button';
 
@@ -20,22 +20,28 @@ const Navbar = () => {
     const navLinks = [
         { name: 'Home', path: '/' },
         { name: 'About Us', path: '/about' },
-        { name: 'Promts', path: '/promts' },
-        { name: 'Events', path: '/events' },
+        { name: 'Terms', path: '/terms' },
     ];
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-white/10">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                {/* Logo */}
-                <NavLink to="/" className="flex items-center gap-2 group">
-                    <div className="p-2 bg-emerald-500/10 rounded-lg group-hover:bg-emerald-500/20 transition-colors">
-                        <Stethoscope className="text-emerald-500" size={24} />
-                    </div>
-                    <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-sky-500">
-                        PneumaScan
-                    </span>
-                </NavLink>
+                {/* Logo & Back Button */}
+                <div className="flex items-center gap-4">
+                    {location.pathname === '/dashboard' && (
+                        <NavLink to="/" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-600 dark:text-slate-400">
+                            <ChevronLeft size={24} />
+                        </NavLink>
+                    )}
+                    <NavLink to="/" className="flex items-center gap-2 group">
+                        <div className="p-2 bg-emerald-500/10 rounded-lg group-hover:bg-emerald-500/20 transition-colors">
+                            <Stethoscope className="text-emerald-500" size={24} />
+                        </div>
+                        <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-sky-500">
+                            PneumaScan
+                        </span>
+                    </NavLink>
+                </div>
 
                 {/* Desktop Nav */}
                 <div className="hidden md:flex items-center gap-8">
