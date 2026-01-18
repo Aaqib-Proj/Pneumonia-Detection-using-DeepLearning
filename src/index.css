@@ -5,33 +5,36 @@
 @tailwind utilities;
 
 :root {
-  /* Dark Mode (Default) */
-  --bg-primary: #020617;
-  /* Slate 950 */
-  --bg-secondary: #0f172a;
-  /* Slate 900 */
-  --bg-card: rgba(2, 6, 23, 0.7);
-  /* Deep dark with transparency */
+  /* Dark Mode (Default) - Deep Medical Blue */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: rgba(30, 41, 59, 0.7);
   --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --accent-primary: #10b981;
+  --text-secondary: #cbd5e1;
+  --accent-primary: #14b8a6;
+  /* Teal 500 */
   --accent-secondary: #0ea5e9;
-  --accent-glow: rgba(16, 185, 129, 0.5);
-  --border-color: rgba(148, 163, 184, 0.1);
+  /* Sky 500 */
+  --accent-glow: rgba(20, 184, 166, 0.5);
+  --border-color: rgba(203, 213, 225, 0.1);
   --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
 }
 
 [data-theme="light"] {
-  --bg-primary: #f8fafc;
+  /* Light Mode - Clean Medical White/Blue */
+  --bg-primary: #eff6ff;
+  /* Blue 50 */
   --bg-secondary: #ffffff;
   --bg-card: rgba(255, 255, 255, 0.9);
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --accent-primary: #059669;
+  --accent-primary: #0d9488;
+  /* Teal 600 */
   --accent-secondary: #0284c7;
-  --accent-glow: rgba(5, 150, 105, 0.25);
+  /* Sky 600 */
+  --accent-glow: rgba(13, 148, 136, 0.25);
   --border-color: rgba(148, 163, 184, 0.2);
 }
 

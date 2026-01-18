@@ -3,7 +3,12 @@ import { FileText, Shield, AlertCircle } from 'lucide-react';
 
 const TermsPage = () => {
     return (
-        <div className="pt-24 pb-16 min-h-screen">
+        <div className="pt-24 pb-16 min-h-screen" style={{
+            backgroundImage: "url('/src/assets/medical_abstract_bg.png')",
+            backgroundSize: 'cover',
+            backgroundAttachment: 'fixed',
+            backgroundPosition: 'center'
+        }}>
             <div className="container mx-auto px-4 max-w-4xl">
                 <div className="text-center mb-16">
                     <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">
@@ -16,7 +21,7 @@ const TermsPage = () => {
 
                 <div className="grid gap-8">
                     {/* Disclaimer Section */}
-                    <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 p-8 rounded-2xl">
+                    <div className="bg-red-50/90 dark:bg-red-900/20 border border-red-100 dark:border-red-900/20 p-8 rounded-2xl backdrop-blur-md">
                         <div className="flex items-start gap-4">
                             <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl">
                                 <AlertCircle size={24} />
@@ -31,7 +36,7 @@ const TermsPage = () => {
                     </div>
 
                     {/* Terms Sections */}
-                    <div className="glass-panel p-8 rounded-2xl space-y-8">
+                    <div className="glass-panel p-8 rounded-2xl space-y-8 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/50 dark:border-slate-700/50">
                         <div>
                             <div className="flex items-center gap-3 mb-4">
                                 <Shield className="text-emerald-500" size={24} />
