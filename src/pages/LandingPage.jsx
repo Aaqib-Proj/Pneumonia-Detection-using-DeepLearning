@@ -24,12 +24,7 @@ const LandingPage = () => {
     };
 
     return (
-        <div className="min-h-screen pt-20 flex flex-col" style={{
-            backgroundImage: "url('/src/assets/medical_abstract_bg.png')",
-            backgroundSize: 'cover',
-            backgroundAttachment: 'fixed',
-            backgroundPosition: 'center'
-        }}>
+        <div className="min-h-screen pt-20 flex flex-col">
 
             {/* Hero Section */}
             <section className="relative overflow-hidden py-20 lg:py-32">

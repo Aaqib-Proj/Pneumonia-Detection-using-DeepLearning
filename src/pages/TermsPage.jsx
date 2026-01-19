@@ -3,12 +3,7 @@ import { FileText, Shield, AlertCircle } from 'lucide-react';
 
 const TermsPage = () => {
     return (
-        <div className="pt-24 pb-16 min-h-screen" style={{
-            backgroundImage: "url('/src/assets/medical_abstract_bg.png')",
-            backgroundSize: 'cover',
-            backgroundAttachment: 'fixed',
-            backgroundPosition: 'center'
-        }}>
+        <div className="pt-24 pb-16 min-h-screen">
             <div className="container mx-auto px-4 max-w-4xl">
                 <div className="text-center mb-16">
                     <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">

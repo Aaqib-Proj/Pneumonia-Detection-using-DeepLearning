@@ -3,12 +3,7 @@ import Card from '../components/Card';
 
 const AboutPage = () => {
     return (
-        <div className="min-h-screen pt-24 pb-12" style={{
-            backgroundImage: "url('/src/assets/medical_abstract_bg.png')",
-            backgroundSize: 'cover',
-            backgroundAttachment: 'fixed',
-            backgroundPosition: 'center'
-        }}>
+        <div className="min-h-screen pt-24 pb-12">
             <div className="container mx-auto px-4">
                 <h1 className="text-4xl font-bold mb-8 text-center"><span className="text-gradient">About Us</span></h1>
 
