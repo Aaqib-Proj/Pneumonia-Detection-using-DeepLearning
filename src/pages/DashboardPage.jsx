@@ -1,6 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { ArrowDown, Download, Share2, FileText, Printer, Maximize2, X } from 'lucide-react';
+import { useLocation, NavLink } from 'react-router-dom';
+import {
+    Download, Share2, FileText, Printer,
+    Maximize2, X, Activity, ShieldAlert,
+    Monitor, Layout, Layers, AlertCircle,
+    CheckCircle2, Clock, Scale, Info, User,
+    ChevronRight, ArrowLeft
+} from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -8,31 +14,23 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { useHeader } from '../context/HeaderContext';
 import MedicalReport from '../components/MedicalReport';
-
-const data = [
-    { name: 'Stage 1', value: 20 },
-    { name: 'Stage 2', value: 40 },
-    { name: 'Stage 3', value: 30 },
-    { name: 'Stage 4', value: 70 },
-    { name: 'Stage 5', value: 50 },
-    { name: 'Stage 6', value: 60 },
-    { name: 'Stage 7', value: 80 },
-];
+import { motion, AnimatePresence } from 'framer-motion';
 
 const DashboardPage = () => {
     const reportRef = useRef(null);
     const location = useLocation();
     const [imageSrc, setImageSrc] = useState(null);
     const [originalImageSrc, setOriginalImageSrc] = useState(null);
+    const [heatmapSrc, setHeatmapSrc] = useState(null);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [patientData, setPatientData] = useState(null);
     const { setActions } = useHeader();
-
+    const [viewMode, setViewMode] = useState('heatmap'); // 'heatmap' | 'original' | 'side-by-side'
+    const [heatmapOpacity, setHeatmapOpacity] = useState(0.7);
     const [report, setReport] = useState(null);
 
     useEffect(() => {
         if (location.state?.fileUrl) {
-            setImageSrc(location.state.fileUrl);
             setOriginalImageSrc(location.state.fileUrl);
         }
         if (location.state?.patientData) {
@@ -40,259 +38,394 @@ const DashboardPage = () => {
         }
         if (location.state?.report) {
             setReport(location.state.report);
-            // If backend provides a heatmap, use it as the primary image for Dashboard, but keep original for Report
             if (location.state.report.heatmap_base64) {
-                setImageSrc(location.state.report.heatmap_base64);
+                setHeatmapSrc(location.state.report.heatmap_base64);
             }
         }
     }, [location]);
 
-    // Data for Chart (Lobe Opacity from Report or Default)
+    // Data for Chart
     const chartData = report?.quantitative?.breakdown?.map(item => ({
         name: item.region.replace('Right ', 'R-').replace('Left ', 'L-').replace(' Upper', 'U').replace(' Middle', 'M').replace(' Lower', 'L'),
-        value: item.opacity_score * 20 // Scale 0-5 to 0-100 for chart
-    })) || data; // Fallback to mock 'data'
+        opacity: item.opacity_score,
+        infection: parseFloat(item.infection_prob) || 0
+    })) || [];
 
-    const handleDownloadPDF = async () => { /* ... existing code ... */
+    const handleDownloadPDF = async () => {
         const element = reportRef.current;
         if (!element) return;
-
         try {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
+            const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`PneumaScan_Report_${report?.meta?.id || 'Draft'}.pdf`);
+            pdf.save(`PneumaScan_Report_${report?.meta?.id || 'Analysis'}.pdf`);
         } catch (error) {
             console.error("PDF Failed", error);
-            alert("Failed to generate PDF");
         }
     };
 
-    // ... handleShare, handlePrint same ...
-    const handleShare = async () => { /* ... existing code ... */ };
     const handlePrint = () => window.print();
+    const handleShare = () => {
+        if (navigator.share) {
+            navigator.share({
+                title: 'PneumaScan Analysis Results',
+                text: `Diagnosis: ${report?.diagnosis?.label} (${report?.diagnosis?.confidence})`,
+                url: window.location.href
+            }).catch(() => { });
+        }
+    };
 
     useEffect(() => {
         setActions([
-            { label: 'Download Report', icon: Download, onClick: handleDownloadPDF },
-            { label: 'Share Report', icon: Share2, onClick: handleShare },
-            { label: 'Print Report', icon: Printer, onClick: handlePrint }
+            { label: 'Download PDF', icon: Download, onClick: handleDownloadPDF },
+            { label: 'Share Results', icon: Share2, onClick: handleShare },
+            { label: 'Print', icon: Printer, onClick: handlePrint }
         ]);
         return () => setActions([]);
-    }, [imageSrc, isFullScreen, setActions, report]);
+    }, [setActions, report, patientData]);
 
-    // Parse Confidence for Gauge
-    const confidenceVal = report ? parseFloat(report.diagnosis.confidence) : 0;
     const isPneumonia = report?.diagnosis?.label === "Pneumonia";
-    const gaugeAngle = isPneumonia ? (confidenceVal / 100) * 180 : 0;
+    const pneumoniaProb = report?.diagnosis?.pneumonia_prob || (isPneumonia ? report?.diagnosis?.confidence : "0%");
+    const confidenceVal = report ? parseFloat(report.diagnosis.confidence) : 0;
 
     return (
-        <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-900 transition-colors">
-            {/* Print Styles */}
+        <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-950 transition-colors">
+            {/* Print Settings */}
             <style>{`
                 @media print {
                     body * { visibility: hidden; }
                     #printable-report-container, #printable-report-container * { visibility: visible; }
-                    #printable-report-container { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; background: white; }
-                    nav, header, footer, .no-print { display: none !important; }
+                    #printable-report-container { position: absolute; left: 0; top: 0; width: 100%; border: none; }
                 }
             `}</style>
 
-            {/* Hidden Professional Report Component */}
-            <div id="printable-report-container" className="fixed top-0 left-[-10000px] w-[210mm] bg-white z-[9999]">
-                <MedicalReport ref={reportRef} imageSrc={originalImageSrc || imageSrc} data={report?.diagnosis || { confidence: 0.98 }} patientData={patientData} report={report} />
+            {/* Hidden PDF Report */}
+            <div id="printable-report-container" className="fixed top-0 left-[-10000px] w-[210mm]">
+                <MedicalReport ref={reportRef} imageSrc={originalImageSrc} data={report?.diagnosis} patientData={patientData} report={report} />
             </div>
 
-            {/* Full Screen Modal ... existing code ... */}
-            {isFullScreen && imageSrc && (
-                <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm no-print" onClick={() => setIsFullScreen(false)}>
-                    <button className="absolute top-6 right-6 text-white hover:text-emerald-500 transition-colors bg-black/50 p-2 rounded-full" onClick={(e) => { e.stopPropagation(); setIsFullScreen(false); }}>
-                        <X size={32} />
-                    </button>
-                    <img src={imageSrc} alt="Full Screen" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
-                </div>
-            )}
-
-            <div className="container mx-auto px-4 print:hidden">
+            <div className="container mx-auto px-4">
+                {/* Header Section */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold">Results Dashboard</h1>
-                        <p className="text-gray-500">Analysis ID: #{report?.meta?.id || 'PENDING'}</p>
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+                        <NavLink to="/upload" className="inline-flex items-center gap-2 text-slate-500 hover:text-emerald-500 mb-2 transition-colors text-sm font-medium">
+                            <ArrowLeft size={16} /> Back to Analysis
+                        </NavLink>
+                        <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Analysis Results</h1>
+                        <p className="text-slate-500 font-mono text-sm uppercase tracking-widest mt-1">Ref: #{report?.meta?.id || '----'}</p>
+                    </motion.div>
+
+                    <div className="flex gap-3 no-print">
+                        <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2 border-slate-200 dark:border-slate-800">
+                            <Printer size={16} /> Print
+                        </Button>
+                        <Button size="sm" onClick={handleDownloadPDF} className="gap-2 shadow-lg shadow-emerald-500/20">
+                            <Download size={16} /> Export PDF
+                        </Button>
                     </div>
                 </div>
 
-                <div className="grid lg:grid-cols-3 gap-8">
-                    {/* Main X-ray View */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <Card className="p-0 overflow-hidden relative group">
-                            <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 print:hidden">
-                                <button className="bg-black/50 hover:bg-black/70 text-white p-2 rounded backdrop-blur" onClick={() => setIsFullScreen(true)}>
-                                    <Maximize2 size={20} />
-                                </button>
+                {/* Patient Summary Bar */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+                >
+                    {[
+                        { label: 'Patient', value: report?.meta?.name || patientData?.name || 'Anonymous', icon: User },
+                        { label: 'Age / Sex', value: report?.meta?.age_sex || `${patientData?.age || '--'} / ${patientData?.gender || '--'}`, icon: Activity },
+                        { label: 'Modality', value: report?.meta?.modality || 'CXR Standard', icon: FileText },
+                        { label: 'Study Date', value: report?.meta?.date || new Date().toLocaleDateString(), icon: Calendar }
+                    ].map((item, idx) => (
+                        <Card key={idx} className="p-4 flex items-center gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-slate-100 dark:border-slate-800">
+                            <div className={`p-2 rounded-lg bg-slate-100 dark:bg-slate-800 ${item.color || 'text-slate-500'}`}>
+                                <item.icon size={20} />
                             </div>
-                            <div className="aspect-[4/3] bg-slate-900 relative">
-                                {imageSrc ? (
-                                    <img src={imageSrc} alt="X-Ray Analysis" className="w-full h-full object-contain bg-black" />
-                                ) : (
-                                    <div className="absolute inset-0 flex items-center justify-center text-slate-700">(No Image Loaded)</div>
-                                )}
-                            </div>
-                            <div className="p-6">
-                                <h3 className="text-xl font-bold mb-2">Explainable AI Analysis</h3>
-                                <p className="text-gray-500 dark:text-gray-400">
-                                    {report ? (
-                                        <>
-                                            Diagnosis: <strong className={isPneumonia ? "text-orange-500" : "text-emerald-500"}>{report.diagnosis.label}</strong>.
-                                            The model has analyzed the scan with <strong className="text-slate-900 dark:text-white">{report.diagnosis.confidence}</strong> confidence.
-                                            {isPneumonia ? " Warm regions in the heatmap above indicate areas of interest contributing to the prediction." : " No significant opacities detected."}
-                                        </>
-                                    ) : (
-                                        "Waiting for analysis results..."
-                                    )}
-                                </p>
+                            <div className="overflow-hidden">
+                                <p className="text-[10px] uppercase font-black text-slate-400 tracking-wider mb-0.5">{item.label}</p>
+                                <p className={`text-sm font-bold truncate ${item.color || 'text-slate-900 dark:text-white'}`}>{item.value}</p>
                             </div>
                         </Card>
-                    </div>
+                    ))}
+                </motion.div>
 
-                    {/* Sidebar Stats */}
-                    <div className="space-y-6">
-                        <Card className="text-center">
-                            <h3 className="font-semibold text-gray-500 mb-6">Confidence Score</h3>
-                            <div className="relative w-48 h-24 mx-auto overflow-hidden">
-                                <div className="absolute bottom-0 w-full h-full bg-slate-200 dark:bg-slate-700 rounded-t-full"></div>
-                                <div className="absolute bottom-0 w-full h-full bg-emerald-500 rounded-t-full origin-bottom transition-transform duration-1000" style={{ transform: `rotate(${gaugeAngle}deg) scale(1)` }}></div>
-                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-16 bg-white dark:bg-slate-900 rounded-t-full flex items-end justify-center pb-2">
-                                    <span className="text-3xl font-bold text-emerald-500">{report ? report.diagnosis.confidence : '0%'}</span>
+                <div className="grid lg:grid-cols-12 gap-8">
+                    {/* Main Analysis Column (8 cols) */}
+                    <div className="lg:col-span-8 space-y-8">
+                        {/* Image Viewer Card */}
+                        <Card className="p-0 overflow-hidden border-none shadow-xl bg-black ring-1 ring-white/5">
+                            <div className="flex items-center justify-between p-4 bg-slate-900/90 border-b border-white/5">
+                                <div className="flex items-center gap-4">
+                                    <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
+                                        {[
+                                            { id: 'heatmap', label: 'Heatmap', icon: Layers },
+                                            { id: 'original', label: 'X-Ray', icon: Monitor },
+                                            { id: 'side-by-side', label: 'Compare', icon: Layout }
+                                        ].map((mode) => (
+                                            <button
+                                                key={mode.id}
+                                                onClick={() => setViewMode(mode.id)}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === mode.id ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                                            >
+                                                <mode.icon size={14} />
+                                                <span className="hidden sm:inline">{mode.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    {viewMode === 'heatmap' && (
+                                        <div className="hidden sm:flex items-center gap-3 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10">
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Opacity</span>
+                                            <input
+                                                type="range" min="0" max="1" step="0.1"
+                                                value={heatmapOpacity}
+                                                onChange={(e) => setHeatmapOpacity(parseFloat(e.target.value))}
+                                                className="w-20 h-1 bg-slate-800 rounded-full appearance-none cursor-pointer accent-emerald-500"
+                                            />
+                                        </div>
+                                    )}
+                                    <button onClick={() => setIsFullScreen(true)} className="p-2 text-slate-500 hover:text-white transition-colors">
+                                        <Maximize2 size={20} />
+                                    </button>
                                 </div>
                             </div>
-                            <p className="text-emerald-500 font-bold mt-2">{report?.diagnosis?.label || 'Calculating...'}</p>
-                            <p className="text-xs text-gray-400">Model Accuracy: &gt;98%</p>
+
+                            <div className="relative aspect-auto min-h-[400px] flex items-center justify-center bg-black rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
+                                {viewMode === 'side-by-side' ? (
+                                    <div className="grid grid-cols-2 w-full h-full gap-px bg-white/5">
+                                        <div className="relative h-full flex items-center justify-center">
+                                            <img src={originalImageSrc} className="max-w-full max-h-full object-contain" alt="Original" />
+                                            <div className="absolute top-4 left-4 px-2 py-1 bg-black/60 backdrop-blur rounded text-[10px] font-black text-white uppercase tracking-widest">Original Scan</div>
+                                        </div>
+                                        <div className="relative border-l border-white/10 h-full flex items-center justify-center">
+                                            <img src={heatmapSrc} className="max-w-full max-h-full object-contain" alt="Heatmap" />
+                                            <div className="absolute top-4 left-4 px-2 py-1 bg-emerald-600/80 backdrop-blur rounded text-[10px] font-black text-white uppercase tracking-widest">AI Heatmap Result</div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="relative w-full h-full flex items-center justify-center">
+                                        <img src={originalImageSrc} className="max-w-full max-h-full object-contain" alt="Scan" />
+                                        <AnimatePresence>
+                                            {viewMode === 'heatmap' && (
+                                                <motion.img
+                                                    initial={{ opacity: 0 }} animate={{ opacity: heatmapOpacity }} exit={{ opacity: 0 }}
+                                                    src={heatmapSrc} className="absolute inset-0 w-full h-full object-contain" alt="Overlay"
+                                                    style={{ willChange: 'opacity' }}
+                                                />
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                )}
+                            </div>
                         </Card>
 
-                        <Card>
-                            <h3 className="font-semibold text-gray-500 mb-4">Lobe Opacity Analysis</h3>
-                            <div className="h-40">
+                        {/* Analysis Breakdown */}
+                        <div className="grid md:grid-cols-2 gap-8">
+                            <Card className="p-6 border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                                <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl"></div>
+                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                    <FileText size={18} className="text-emerald-500" /> Clinical Assessment
+                                </h3>
+                                <div className="space-y-4">
+                                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                                        <h4 className="text-xs font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Primary Findings</h4>
+                                        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed italic">
+                                            "{report?.clinical?.findings || 'Waiting for diagnostic results...'}"
+                                        </p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 text-center">
+                                            <p className="text-[10px] text-slate-400 font-bold mb-1 uppercase">Heart</p>
+                                            <p className="text-xs font-bold">{report?.clinical?.heart || '--'}</p>
+                                        </div>
+                                        <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 text-center">
+                                            <p className="text-[10px] text-slate-400 font-bold mb-1 uppercase">Diaphragm</p>
+                                            <p className="text-xs font-bold">{report?.clinical?.diaphragm || '--'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Card>
+
+                            <Card className="p-6 border-slate-100 dark:border-slate-800 shadow-sm">
+                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                    <Monitor size={18} className="text-blue-500" /> AI Quantatitive Report
+                                </h3>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800">
+                                        <span className="text-xs font-bold text-slate-500">Opacity Severity Score</span>
+                                        <span className="text-sm font-black text-slate-900 dark:text-white">{report?.quantitative?.total_opacity_score || '0.0'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800">
+                                        <span className="text-xs font-bold text-slate-500">Lung Surface Affected</span>
+                                        <span className="text-sm font-black text-slate-900 dark:text-white">{report?.quantitative?.lung_involvement || '0%'}</span>
+                                    </div>
+                                    <div className="pt-2">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Regional Risk Heat</p>
+                                        <div className="space-y-2">
+                                            {report?.quantitative?.breakdown?.slice(0, 3).map((item, i) => (
+                                                <div key={i} className="flex items-center gap-3">
+                                                    <span className="text-[10px] w-20 font-bold truncate">{item.region}</span>
+                                                    <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                        <motion.div
+                                                            initial={{ width: 0 }} animate={{ width: `${(item.opacity_score / 5) * 100}%` }}
+                                                            className={`h-full ${item.opacity_score > 2 ? 'bg-red-500' : 'bg-emerald-500'}`}
+                                                        ></motion.div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+                    </div>
+
+                    {/* Sidebar Column (4 cols) */}
+                    <div className="lg:col-span-4 space-y-8">
+                        {/* Overall Probability Gauge */}
+                        <Card className="p-8 border-none shadow-xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 text-white relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-[40px]"></div>
+                            <div className="relative z-10 text-center">
+                                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-8">Classification Confidence</h3>
+
+                                <div className="inline-block relative">
+                                    <svg viewBox="0 0 100 100" className="w-40 h-40">
+                                        <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="6" className="text-white/5" />
+                                        <motion.circle
+                                            cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="6"
+                                            strokeDasharray="283"
+                                            initial={{ strokeDashoffset: 283 }}
+                                            animate={{ strokeDashoffset: 283 - (283 * (confidenceVal / 100)) }}
+                                            className={isPneumonia ? "text-red-500" : "text-emerald-500"}
+                                            strokeLinecap="round" transform="rotate(-90 50 50)"
+                                            style={{ willChange: 'stroke-dashoffset' }}
+                                        />
+                                    </svg>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span className="text-5xl font-black text-slate-900 dark:text-white leading-none tracking-tighter">
+                                            {report?.diagnosis?.confidence || '0.0%'}
+                                        </span>
+                                        <span className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mt-3">AI Confidence</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 grid grid-cols-2 gap-4">
+                                    <div className="bg-slate-50 dark:bg-white/5 p-3 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Match Score</div>
+                                        <div className={`text-xl font-black ${isPneumonia ? 'text-red-500' : 'text-emerald-500'}`}>
+                                            {pneumoniaProb}
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-50 dark:bg-white/5 p-3 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Severity</div>
+                                        <div className="text-xl font-black text-slate-900 dark:text-white">
+                                            {report?.diagnosis?.severity || 'None'}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5">
+                                    <div className={`text-2xl font-black tracking-tighter uppercase ${isPneumonia ? 'text-red-500' : 'text-emerald-500'}`}>
+                                        {report?.diagnosis?.label || 'Calculating...'}
+                                    </div>
+                                    <div className="flex items-center justify-center gap-2 mt-1">
+                                        <div className={`w-2 h-2 rounded-full ${isPneumonia ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`}></div>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detection Mode: {report?.meta?.model || 'ViT 2.4-S'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+
+                        {/* Area Chart Card */}
+                        <Card className="p-6 border-slate-100 dark:border-slate-800 shadow-sm">
+                            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center justify-between">
+                                Lobe Participation Map
+                                <Scale size={14} className="text-slate-300" />
+                            </h3>
+                            <div className="h-44">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={chartData}>
                                         <defs>
-                                            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                            <linearGradient id="opacityGrad" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={isPneumonia ? "#ef4444" : "#10b981"} stopOpacity={0.4} />
+                                                <stop offset="95%" stopColor={isPneumonia ? "#ef4444" : "#10b981"} stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
-                                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                                        <YAxis hide />
-                                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
-                                        <Area type="monotone" dataKey="value" stroke="#10b981" fillOpacity={1} fill="url(#colorValue)" strokeWidth={2} />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700 }} />
+                                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '10px' }} />
+                                        <Area type="monotone" dataKey="opacity" stroke={isPneumonia ? "#ef4444" : "#10b981"} fill="url(#opacityGrad)" strokeWidth={3} strokeLinecap="round" />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </Card>
-                    </div>
-                </div>
 
-                {/* Detailed Report Section */}
-                <div className="mt-8 grid md:grid-cols-2 gap-8">
-                    <Card>
-                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                            <FileText size={20} className="text-emerald-500" />
-                            Clinical Findings
-                        </h3>
-                        <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-                            <p><strong className="text-gray-900 dark:text-white">Patient:</strong> {patientData ? patientData.name : 'Unknown'}</p>
-                            <p><strong className="text-gray-900 dark:text-white">ID:</strong> {report?.meta?.id}</p>
-                            <p><strong className="text-gray-900 dark:text-white">Scan Date:</strong> {report?.meta?.date}</p>
-                            <div className="h-px bg-gray-200 dark:bg-gray-700 my-2"></div>
-                            {report?.clinical ? (
-                                <>
-                                    <p><strong>Findings:</strong> {report.clinical.findings}</p>
-                                    <p><strong>Heart:</strong> {report.clinical.heart}</p>
-                                    <p><strong>Diaphragm:</strong> {report.clinical.diaphragm}</p>
-                                </>
-                            ) : <p>Loading findings...</p>}
-                        </div>
-                    </Card>
-
-                    <Card>
-                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                            <Maximize2 size={20} className="text-blue-500" />
-                            AI Model Metrics
-                        </h3>
-                        {report && (
-                            <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-                                <p><strong>Model Used:</strong> {report.meta.model}</p>
-                                <p><strong>Inference Latency:</strong> {report.meta.latency}</p>
-                                <p><strong>Detected Label:</strong> {report.diagnosis.label}</p>
-                                <p><strong>Severity Assessment:</strong> {report.diagnosis.severity}</p>
-
-                                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded p-3 mt-4">
-                                    <p className="text-emerald-600 dark:text-emerald-400 font-medium">
-                                        Recommendation: {report.clinical.recommendation}
+                        {/* Medical Summary Card */}
+                        <div className="p-6 rounded-[2rem] shadow-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white border border-white/5 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                            <div className="relative z-10">
+                                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-6 flex items-center justify-between">
+                                    Next Protocol
+                                    <ChevronRight size={16} className="text-emerald-500" />
+                                </h3>
+                                <div className="p-4 bg-white/5 rounded-2xl border border-white/5 mb-8">
+                                    <p className="text-base font-bold leading-relaxed text-emerald-50">
+                                        {report?.clinical?.recommendation || 'Consult your physician for a full clinical evaluation.'}
                                     </p>
                                 </div>
-                            </div>
-                        )}
-                    </Card>
-                </div>
-
-                {/* Patient Friendly Explanation */}
-                {report && (
-                    <div className="mt-8">
-                        <Card className="bg-gradient-to-r from-emerald-500/5 to-blue-500/5 border-emerald-500/10">
-                            <div className="flex flex-col md:flex-row gap-8 items-start">
-                                <div className="flex-1">
-                                    <h3 className="font-bold text-xl mb-4 text-emerald-600 dark:text-emerald-400">What does this result mean?</h3>
-                                    <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-                                        {isPneumonia ?
-                                            "Our AI has detected signs consistent with Pneumonia. This suggests a potential infection or inflammation in the lungs. It is important to consult a doctor." :
-                                            "Our AI did not find significant signs of pneumonia. The lungs appear clear based on this analysis."
-                                        }
-                                    </p>
-
-                                    <div className="grid sm:grid-cols-2 gap-4 mt-6">
-                                        <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                            <div className="text-sm text-gray-500 mb-1">Severity</div>
-                                            <div className={`text-lg font-bold flex items-center gap-2 ${isPneumonia ? 'text-orange-500' : 'text-emerald-500'}`}>
-                                                <div className={`w-3 h-3 rounded-full ${isPneumonia ? 'bg-orange-500' : 'bg-emerald-500'}`}></div>
-                                                {report.diagnosis.severity}
+                                <div className="space-y-4">
+                                    {['Clinical Correlation', 'Pathology Review', 'Follow-up Imaging'].map((label, i) => (
+                                        <div key={i} className="flex items-center gap-4 text-sm font-black text-slate-300">
+                                            <div className="w-6 h-6 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                                                <CheckCircle2 size={14} className="text-emerald-400" />
                                             </div>
+                                            {label}
                                         </div>
-                                        <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                            <div className="text-sm text-gray-500 mb-1">Lung Involvement</div>
-                                            <div className="text-lg font-bold text-gray-900 dark:text-white">{report.quantitative.lung_involvement}</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="md:w-1/3 bg-white dark:bg-slate-900 p-6 rounded-xl border border-gray-100 dark:border-gray-800 w-full">
-                                    <h4 className="font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
-                                        <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm">i</div>
-                                        Recommended Next Steps
-                                    </h4>
-                                    <ul className="space-y-3">
-                                        <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
-                                            <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></div>
-                                            {report.clinical.recommendation}
-                                        </li>
-                                        <li className="flex gap-3 text-sm text-gray-600 dark:text-gray-400">
-                                            <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></div>
-                                            Download this report for your doctor.
-                                        </li>
-                                    </ul>
-                                    <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-400 italic">
-                                        Disclaimer: AI analysis is for screening only.
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
-                        </Card>
+                        </div>
                     </div>
-                )}
+                </div>
+
+                {/* Footer Disclaimer */}
+                <div className="mt-12 text-center max-w-2xl mx-auto space-y-4">
+                    <p className="text-[10px] text-slate-400 leading-relaxed max-w-md mx-auto italic">
+                        The AI analysis provided here is for assistive screening. It is not a definitive diagnosis.
+                        False positives/negatives may occur in atypical presentations.
+                    </p>
+                    <div className="flex items-center justify-center gap-8 opacity-20 grayscale">
+                        <span className="text-xs font-black tracking-tighter">DICOM COMPLIANT</span>
+                        <span className="text-xs font-black tracking-tighter">ISO 13485 (REF)</span>
+                        <span className="text-xs font-black tracking-tighter">CE / MEDICAL AI</span>
+                    </div>
+                </div>
             </div>
+
+            {/* Full Screen View */}
+            <AnimatePresence>
+                {isFullScreen && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[1000] bg-black/95 flex items-center justify-center p-4 sm:p-12 cursor-zoom-out"
+                        onClick={() => setIsFullScreen(false)}
+                    >
+                        <button className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors">
+                            <X size={48} />
+                        </button>
+                        <img
+                            src={viewMode === 'original' ? originalImageSrc : (viewMode === 'heatmap' ? heatmapSrc : originalImageSrc)}
+                            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                            alt="Viewer"
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

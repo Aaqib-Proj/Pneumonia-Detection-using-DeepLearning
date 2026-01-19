@@ -63,7 +63,7 @@ const FileUpload = ({ onFileSelect }) => {
                         type="file"
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         onChange={handleChange}
-                        accept="image/*"
+                        accept="image/*,.dcm"
                     />
                     <div className="p-4 bg-emerald-500/10 rounded-full mb-4">
                         <Upload className="text-emerald-500" size={32} />

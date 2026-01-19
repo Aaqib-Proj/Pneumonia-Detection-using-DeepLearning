@@ -7,6 +7,7 @@ import numpy as np
 import base64
 import cv2
 import random
+import pydicom
 from io import BytesIO
 from PIL import Image
 from torchvision import transforms
@@ -18,7 +19,6 @@ class PneumaAI_Backend:
         print(f"✅ Backend Initializing on: {self.device}...")
         
         # --- LOAD BOTH MODELS ---
-        # Ensure these files exist in your folder!
         print("   1. Loading Pediatric Specialist...")
         self.model_pediatric = self._load_model("best_vit_pediatric.pth")
         
@@ -46,6 +46,41 @@ class PneumaAI_Backend:
         except Exception as e:
             print(f"      ⚠️ Failed to load {path} ({e}). Using Random Weights (Demo Mode).")
         return model.to(self.device).eval()
+
+    def read_dicom(self, file_bytes):
+        """
+        PARSES DICOM FILES (The "Hospital Standard" Feature)
+        Extracts real patient data and converts high-bit X-ray to visible image.
+        """
+        try:
+            # 1. Read DICOM Object
+            dicom = pydicom.dcmread(BytesIO(file_bytes))
+            
+            # 2. Extract Metadata safely (Defaults to "Unknown" if missing)
+            meta = {
+                "name": str(dicom.get("PatientName", "Anonymous")),
+                "id": str(dicom.get("PatientID", f"PT-{str(uuid.uuid4())[:6].upper()}")),
+                "age": str(dicom.get("PatientAge", "??")).replace("Y", ""),
+                "sex": str(dicom.get("PatientSex", "U")),
+                "date": dicom.get("StudyDate", datetime.datetime.now().strftime("%d/%m/%Y")),
+                "modality": str(dicom.get("Modality", "CR"))
+            }
+            
+            # 3. Handle Image Data (DICOM is often 16-bit, we need 8-bit)
+            img = dicom.pixel_array.astype(float)
+            # Normalize to 0-255 range
+            img = (np.maximum(img, 0) / (img.max() if img.max() > 0 else 1.0)) * 255.0
+            img = np.uint8(img)
+            
+            # Convert to PIL RGB (Model expects 3 channels)
+            img_pil = Image.fromarray(img).convert('RGB')
+            
+            print(f"   ℹ️ DICOM Loaded: {meta['name']} ({meta['age']}y)")
+            return img_pil, meta
+            
+        except Exception as e:
+            # If it fails, it's likely just a JPG/PNG
+            return None, None
 
     def enhance_clinical_image(self, image_bytes):
         """
@@ -137,34 +172,52 @@ class PneumaAI_Backend:
         
         if label == "Normal":
             return {
-                "findings": "Both lung fields are clear. No focal consolidation.",
+                "findings": "The cardiac silhouette and mediastinal contours are within normal limits. Both lung fields are clear of focal consolidation, effusion, or pneumothorax. No acute pulmonary abnormality is identified.",
                 "heart": "Cardiac silhouette is normal.",
                 "diaphragm": "Costophrenic angles are sharp.",
-                "recommendation": "No acute abnormalities. Routine monitoring."
+                "recommendation": "Normal diagnostic outcome. Continue routine clinical monitoring as indicated by primary symptoms."
             }
         else:
             lobe_name = worst_lobe['region']
             if conf_score < 0.75:
                 sev = "Low"
-                rec = "Inconclusive. Clinical correlation recommended."
+                rec = f"Mild opacity detected in {lobe_name} Lobe. Correlate with clinical markers for early-stage pneumonia."
             elif conf_score < 0.90:
                 sev = "Moderate"
-                rec = "Pulmonology consultation suggested."
+                rec = f"Significant focal consolidation in {lobe_name} Lobe. Probable bacterial pneumonia. Prompt Pulmonology referral suggested."
             else:
                 sev = "Severe"
-                rec = "URGENT: Immediate clinical assessment required."
+                rec = f"URGENT: Extensive air-space opacification in {lobe_name} Lobe. High suspicion of acute pneumonia. Immediate clinical stabilization required."
 
             return {
-                "findings": f"Opacity observed in {lobe_name} Lobe. Suggestive of {sev.lower()} pneumonia.",
-                "heart": "Cardiac borders partially obscured.",
-                "diaphragm": "Costophrenic angles blunted.",
+                "findings": f"Multifocal or focal opacity observed predominantly in the {lobe_name} Lobe. The radiographic appearance is highly suggestive of {sev.lower()} inflammatory infiltrate.",
+                "heart": "Cardiac borders may be partially obscured by adjacent infiltrate.",
+                "diaphragm": "Trace blunting of the costophrenic angle on the affected side.",
                 "recommendation": rec
             }
 
     def generate_report(self, image_bytes, patient_type):
         start_time = time.time()
         
-        # --- 1. TOGGLE LOGIC ---
+        # --- 1. INTELLIGENT FILE PARSING (DICOM vs JPG) ---
+        img, meta = self.read_dicom(image_bytes)
+        
+        if img is None:
+            # It's NOT a DICOM, use standard cleaning logic
+            try: img = self.enhance_clinical_image(image_bytes)
+            except: img = Image.open(BytesIO(image_bytes)).convert('RGB')
+            
+            # Standard Metadata for JPGs
+            meta = {
+                "name": "Anonymous",
+                "id": f"PNEUMA-{str(uuid.uuid4())[:4].upper()}",
+                "age": "--",
+                "sex": "--",
+                "date": datetime.datetime.now().strftime("%d/%m/%Y"),
+                "modality": "CXR (Standard)"
+            }
+
+        # --- 2. MODEL SELECTION ---
         if patient_type == "adult":
             active_model = self.model_adult
             active_explainer = self.explainer_adult
@@ -174,45 +227,48 @@ class PneumaAI_Backend:
             active_explainer = self.explainer_pediatric
             model_name = "PneumaNet v2.4 (Pediatric Specialist)"
 
-        # --- 2. CLEAN IMAGE ---
-        try: img = self.enhance_clinical_image(image_bytes)
-        except: img = Image.open(BytesIO(image_bytes)).convert('RGB')
-        
+        # --- 3. PREDICT ---
         tensor = self.transform(img).unsqueeze(0).to(self.device)
         
-        # --- 3. PREDICT ---
         with torch.no_grad():
             output = active_model(tensor)
             probs = torch.softmax(output, dim=1)
             confidence, class_idx = torch.max(probs, 1)
         
         label = "Pneumonia" if class_idx.item() == 1 else "Normal"
-        conf_score = float(confidence.item())  # Ensure it's a Python float, not numpy.float32
+        conf_score = float(confidence.item())
         
         # --- 4. EXPLAIN ---
         heatmap_grid = active_explainer.generate_cam(tensor, target_class=class_idx.item())
         
-        # --- 5. QUANTITATIVE METRICS ---
+        # --- 5. METRICS ---
         quant_data = self._calculate_lobe_metrics(heatmap_grid, conf_score, label)
         clinical = self._get_clinical_text(label, conf_score, quant_data)
 
-        # --- 6. VISUALS ---
+        # Visuals
         heatmap_img = overlay_heatmap(img, heatmap_grid, alpha=0.4)
         buffered = BytesIO()
         heatmap_img.save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
         
         # Severity
-        if conf_score > 0.90: severity = "High"
-        elif conf_score > 0.70: severity = "Moderate"
-        else: severity = "Low"
-        if label == "Normal": severity = "None"
+        if label == "Pneumonia":
+            if conf_score > 0.90: severity = "High"
+            elif conf_score > 0.70: severity = "Moderate"
+            else: severity = "Low"
+        else:
+            severity = "None"
 
-        # --- 7. FINAL JSON ---
+        p_prob = conf_score if label == "Pneumonia" else (1.0 - conf_score)
+
+        # --- 6. FINAL JSON ---
         return {
             "meta": {
-                "id": f"PNEUMA-{str(uuid.uuid4())[:4].upper()}",
-                "date": datetime.datetime.now().strftime("%d/%m/%Y"),
+                "id": meta["id"],
+                "name": meta["name"],
+                "age_sex": f"{meta['age']}/{meta['sex']}",
+                "date": meta["date"],
+                "modality": meta["modality"],
                 "model": model_name,
                 "latency": f"{int((time.time()-start_time)*1000)}ms"
             },
@@ -220,7 +276,7 @@ class PneumaAI_Backend:
                 "label": label,
                 "confidence": f"{conf_score:.1%}",
                 "severity": severity,
-                "pneumonia_prob": f"{conf_score:.1%}"
+                "pneumonia_prob": f"{p_prob:.1%}"
             },
             "quantitative": quant_data,
             "clinical": clinical,

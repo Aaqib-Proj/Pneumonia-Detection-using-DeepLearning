@@ -32,7 +32,7 @@ function App() {
           <Router>
             <div className="min-h-screen bg-white dark:bg-slate-900 transition-colors flex flex-col font-sans text-slate-900 dark:text-slate-50">
               <Navbar />
-              <main className="flex-grow reltative z-0">
+              <main className="flex-grow relative z-0">
                 <Routes>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/about" element={<AboutPage />} />

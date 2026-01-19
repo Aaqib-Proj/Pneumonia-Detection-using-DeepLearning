@@ -2,19 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import { Clock, Calendar, User, FileText, ChevronRight, Search, Trash2, RefreshCw } from 'lucide-react';
+import {
+    Clock, Calendar, User, FileText,
+    ChevronRight, Search, Trash2, Heart,
+    Filter, Download, ArrowUpRight, AlertCircle,
+    LayoutGrid, List
+} from 'lucide-react';
 import { fetchHistory, deleteReport } from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const HistoryPage = () => {
     const navigate = useNavigate();
     const [reports, setReports] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+    const [filterCategory, setFilterCategory] = useState('all'); // 'all' | 'Pneumonia' | 'Normal'
 
     const loadData = async () => {
         setLoading(true);
         try {
-            const data = await fetchHistory();
+            // Priority 1: Backend API
+            let data = await fetchHistory();
+
+            // Priority 2: LocalStorage fallback (union)
+            const local = JSON.parse(localStorage.getItem('pneuma_history') || '[]');
+
+            // Simple merge by ID
+            const seen = new Set(data.map(r => r.id));
+            local.forEach(r => {
+                if (!seen.has(r.id)) data.push(r);
+            });
+
+            // Sort by timestamp
+            data.sort((a, b) => b.timestamp - a.timestamp);
             setReports(data);
         } catch (error) {
             console.error("Failed to load history", error);
@@ -39,110 +60,151 @@ const HistoryPage = () => {
 
     const handleDelete = async (id, e) => {
         e.stopPropagation();
-        if (window.confirm("Are you sure you want to delete this report?")) {
+        if (window.confirm("Permanent removal from clinical records?")) {
             const success = await deleteReport(id);
-            if (success) {
-                setReports(prev => prev.filter(r => r.id !== id));
-            }
+            // Even if backend fails, remove from local state for UX
+            setReports(prev => prev.filter(r => r.id !== id));
+            const local = JSON.parse(localStorage.getItem('pneuma_history') || '[]');
+            localStorage.setItem('pneuma_history', JSON.stringify(local.filter(r => r.id !== id)));
         }
     };
 
-    const filteredReports = reports.filter(r =>
-        r.patientData?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.id?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredReports = reports.filter(r => {
+        const matchesSearch = (
+            r.patientData?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            r.id?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        const matchesFilter = filterCategory === 'all' || r.diagnosis === filterCategory;
+        return matchesSearch && matchesFilter;
+    });
 
     return (
-        <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-900 transition-colors">
+        <div className="min-h-screen pt-24 pb-20 bg-slate-50 dark:bg-slate-950 transition-colors">
             <div className="container mx-auto px-4 max-w-6xl">
-                <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold flex items-center gap-3">
-                            <Clock className="text-emerald-500" />
-                            Report History
-                        </h1>
-                        <p className="text-gray-500 mt-1">View and manage past diagnostic reports</p>
-                    </div>
 
-                    <div className="relative w-full md:w-auto">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search by patient..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 w-full md:w-64 focus:ring-2 focus:ring-emerald-500 outline-none bg-white dark:bg-slate-800"
-                        />
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+                        <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-4">
+                            <div className="p-3 bg-emerald-500 rounded-2xl shadow-xl shadow-emerald-500/20">
+                                <Clock className="text-white" size={32} />
+                            </div>
+                            Archive Repository
+                        </h1>
+                        <p className="text-slate-500 font-medium mt-2">Manage and review historical patient diagnostic studies.</p>
+                    </motion.div>
+
+                    <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                        <div className="relative group flex-1 sm:w-80">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={18} />
+                            <input
+                                type="text"
+                                placeholder="Search by name or ID..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-white dark:bg-slate-900 shadow-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold text-sm"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <select
+                                value={filterCategory}
+                                onChange={(e) => setFilterCategory(e.target.value)}
+                                className="px-4 py-3.5 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border-none focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-bold transition-all"
+                            >
+                                <option value="all">All Diagnoses</option>
+                                <option value="Pneumonia">Pneumonia Only</option>
+                                <option value="Normal">Normal Only</option>
+                            </select>
+                            <button
+                                onClick={() => setViewMode(v => v === 'grid' ? 'list' : 'grid')}
+                                className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-500"
+                            >
+                                {viewMode === 'grid' ? <List size={20} /> : <LayoutGrid size={20} />}
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {reports.length === 0 ? (
-                    <div className="text-center py-20">
-                        <div className="bg-emerald-100 dark:bg-emerald-900/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <FileText className="text-emerald-500" size={32} />
-                        </div>
-                        <h3 className="text-xl font-semibold mb-2">No Reports Found</h3>
-                        <p className="text-gray-500 mb-6">You haven't generated any reports yet.</p>
-                        <Button onClick={() => navigate('/upload')}>
-                            Start New Analysis
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="grid gap-4">
-                        {filteredReports.map((item) => (
-                            <div
-                                key={item.id}
-                                onClick={() => handleViewReport(item)}
-                                className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col md:flex-row items-center gap-4"
-                            >
-                                {/* Date/Time Badge */}
-                                <div className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-slate-700 rounded-lg min-w-[100px]">
-                                    <span className="text-xs font-bold text-gray-400 uppercase">{new Date(item.timestamp).toLocaleDateString()}</span>
-                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                </div>
-
-                                {/* Patient Info */}
-                                <div className="flex-1 text-left">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="font-bold text-lg text-slate-800 dark:text-white group-hover:text-emerald-500 transition-colors">
-                                            {item.patientData.name}
-                                        </h3>
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 border border-slate-200 dark:border-slate-600">
-                                            {item.patientData.age}yo / {item.patientData.gender}
-                                        </span>
-                                    </div>
-                                    <p className="text-xs text-gray-500 font-mono">ID: {item.id}</p>
-                                </div>
-
-                                {/* Diagnosis Result */}
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full ${item.diagnosis === 'Pneumonia' ? 'bg-orange-500' : 'bg-emerald-500'}`}></div>
-                                        <span className={`font-semibold ${item.diagnosis === 'Pneumonia' ? 'text-orange-600' : 'text-emerald-600'}`}>
-                                            {item.diagnosis}
-                                        </span>
-                                    </div>
-                                    <div className="text-xs text-gray-400 mt-1">
-                                        Confidence: {item.confidence}
-                                    </div>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={(e) => handleDelete(item.id, e)}
-                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                        title="Delete Report"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                    <div className="p-2 text-gray-300 group-hover:text-emerald-500 transition-colors">
-                                        <ChevronRight size={24} />
-                                    </div>
-                                </div>
-                            </div>
+                {loading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="h-64 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 opacity-50"></div>
                         ))}
                     </div>
+                ) : filteredReports.length === 0 ? (
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-32">
+                        <div className="w-24 h-24 bg-slate-200 dark:bg-slate-900 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8">
+                            <Search className="text-slate-400" size={40} />
+                        </div>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4">No archives found</h3>
+                        <p className="text-slate-500 font-medium mb-10 max-w-sm mx-auto">Either you haven't performed any analyses yet or no records match your current filter.</p>
+                        <Button onClick={() => navigate('/upload')} className="px-10 py-4 rounded-2xl shadow-2xl shadow-emerald-500/20">
+                            Start First Analysis
+                        </Button>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}
+                    >
+                        <AnimatePresence>
+                            {filteredReports.map((item) => (
+                                <motion.div
+                                    key={item.id}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    onClick={() => handleViewReport(item)}
+                                    className={`${viewMode === 'grid'
+                                        ? "bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all cursor-pointer border border-transparent hover:border-emerald-500/10 group"
+                                        : "bg-white dark:bg-slate-900 p-4 rounded-2xl flex items-center gap-6 shadow-sm hover:shadow-lg transition-all cursor-pointer group"}`}
+                                >
+                                    {/* Visual Identifier */}
+                                    <div className={`${viewMode === 'grid' ? "h-40 w-full mb-6" : "h-16 w-16 shrink-0"} rounded-2xl overflow-hidden bg-black relative`}>
+                                        <img src={item.originalImageBase64} className="w-full h-full object-cover opacity-80" alt="Scan" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                        <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${item.diagnosis === 'Pneumonia' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
+                                            <span className="text-[10px] font-black text-white uppercase tracking-widest">{item.diagnosis}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h3 className="font-black text-lg text-slate-900 dark:text-white leading-none group-hover:text-emerald-500 transition-colors tracking-tight">
+                                                    {item.patientData.name}
+                                                </h3>
+                                                <p className="text-[10px] font-bold text-slate-400 font-mono tracking-widest mt-1">REF: {item.id}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Inferred</p>
+                                                <p className="text-xs font-black text-slate-900 dark:text-white italic">{new Date(item.timestamp).toLocaleDateString()}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-4 mt-6">
+                                            <div className="bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                <span className="text-[9px] font-black text-slate-400 uppercase block tracking-tighter">Certainty</span>
+                                                <span className="text-xs font-black text-emerald-500">{item.confidence}</span>
+                                            </div>
+                                            <div className="flex-1"></div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={(e) => handleDelete(item.id, e)}
+                                                    className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                                <div className="p-2.5 text-slate-300 group-hover:text-emerald-500 transition-all">
+                                                    <ArrowUpRight size={20} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </motion.div>
                 )}
             </div>
         </div>

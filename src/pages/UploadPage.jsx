@@ -3,103 +3,94 @@ import { useNavigate } from 'react-router-dom';
 import FileUpload from '../components/FileUpload';
 import { uploadXRay } from '../services/api';
 import Button from '../components/Button';
-import { CheckCircle2, Loader2, Calendar, User, Phone, Mail, FileText, Activity, Hash } from 'lucide-react';
+import Card from '../components/Card';
+import {
+    CheckCircle2, Loader2, Calendar, User,
+    Phone, Mail, FileText, Activity, Hash,
+    UploadCloud, ShieldCheck, ArrowRight, X,
+    ChevronRight, Info
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const Zap = ({ size, className }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+        <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
 
 const UploadPage = () => {
     const navigate = useNavigate();
     const [file, setFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
     const [analyzing, setAnalyzing] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [stage, setStage] = useState(0); // 0: Idle, 1: Uploading, 2: Processing, 3: Complete
+    const [stage, setStage] = useState(0);
     const [patientId, setPatientId] = useState('');
+    const [activeStep, setActiveStep] = useState(1);
 
     useEffect(() => {
-        // Generate a random patient ID on mount
         setPatientId(`P-${Math.floor(100000 + Math.random() * 900000)}`);
     }, []);
 
-    // Form State
     const [formData, setFormData] = useState({
-        name: '',
-        dob: '',
-        age: '',
-        gender: 'male',
-        weight: '',
-        email: '',
-        phone: '',
-        clinicalNotes: '',
-        patientType: 'adult' // 'adult' | 'pediatric'
+        name: '', dob: '', age: '', gender: 'male',
+        weight: '', email: '', phone: '', clinicalNotes: '',
+        patientType: 'adult'
     });
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-
-        // Auto-calculate age if DOB changes
         if (name === 'dob') {
             const birthDate = new Date(value);
             const today = new Date();
             let age = today.getFullYear() - birthDate.getFullYear();
             const m = today.getMonth() - birthDate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                age--;
-            }
-            setFormData(prev => ({
-                ...prev,
-                dob: value,
-                age: age >= 0 ? age.toString() : ''
-            }));
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+            setFormData(prev => ({ ...prev, dob: value, age: age >= 0 ? age.toString() : '' }));
         } else {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }));
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+    };
+
+    const handleFileChange = (f) => {
+        setFile(f);
+        if (f) {
+            const url = URL.createObjectURL(f);
+            setPreviewUrl(url);
+        } else {
+            setPreviewUrl(null);
         }
     };
 
     const handleAnalyze = async (e) => {
         e.preventDefault();
-        if (!file) {
-            alert("Please upload an X-Ray image first.");
-            return;
-        }
-
-        // Expanded Validation
-        if (!formData.name || !formData.age || !formData.gender || !formData.weight || !formData.phone) {
-            alert("Please fill in all mandatory fields: Name, Age, Gender, Weight, and Phone.");
-            return;
-        }
+        if (!file) { alert("Please upload an X-Ray image."); return; }
+        if (!formData.name || !formData.age) { alert("Please complete patient details."); return; }
 
         setAnalyzing(true);
         setStage(1);
         setProgress(0);
 
         try {
-            // Start fake progress
             const progressInterval = setInterval(() => {
-                setProgress((prev) => {
-                    if (prev >= 90) return 90;
-                    return prev + Math.random() * 5;
-                });
-            }, 500);
+                setProgress((prev) => (prev >= 90 ? 90 : prev + Math.random() * 8));
+            }, 600);
 
-            // Call Real API
-            const report = await uploadXRay(file, formData.patientType);
+            const report = await uploadXRay(file, formData.patientType, formData);
 
             clearInterval(progressInterval);
             setProgress(100);
             setStage(3);
 
-            // Convert to Base64 for history
-            const toBase64 = (file) => new Promise((resolve, reject) => {
+            const toBase64 = (fileRef) => new Promise((res, rej) => {
                 const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
+                reader.readAsDataURL(fileRef);
+                reader.onload = () => res(reader.result);
+                reader.onerror = e => rej(e);
             });
 
             try {
-                const base64Image = await toBase64(file);
-                // Save to History
+                const base64 = await toBase64(file);
                 const historyItem = {
                     id: report.meta?.id || patientId,
                     timestamp: Date.now(),
@@ -107,361 +98,265 @@ const UploadPage = () => {
                     diagnosis: report.diagnosis?.label || 'Unknown',
                     confidence: report.diagnosis?.confidence || '--',
                     reportData: report,
-                    originalImageBase64: base64Image
+                    originalImageBase64: base64
                 };
-
-                const existingHistory = JSON.parse(localStorage.getItem('pneuma_history') || '[]');
-                const newHistory = [historyItem, ...existingHistory].slice(0, 10);
-                localStorage.setItem('pneuma_history', JSON.stringify(newHistory));
-            } catch (err) {
-                console.error("Failed to save history", err);
-            }
+                const existing = JSON.parse(localStorage.getItem('pneuma_history') || '[]');
+                localStorage.setItem('pneuma_history', JSON.stringify([historyItem, ...existing].slice(0, 15)));
+            } catch (err) { console.error(err); }
 
             setTimeout(() => {
-                navigate('/dashboard', {
-                    state: {
-                        fileUrl: URL.createObjectURL(file), // Original file for local preview
-                        patientData: { ...formData, id: patientId },
-                        report: report
-                    }
-                });
+                navigate('/dashboard', { state: { fileUrl: URL.createObjectURL(file), patientData: { ...formData, id: patientId }, report } });
             }, 1000);
 
         } catch (error) {
             console.error(error);
-            alert("Analysis failed. Please ensure the backend is running.");
+            alert("Analysis failed.");
             setAnalyzing(false);
             setStage(0);
-            setProgress(0);
         }
     };
 
-    useEffect(() => {
-        if (progress > 30 && stage === 1) setStage(2);
-    }, [progress, stage]);
+    const steps = [
+        { id: 1, label: 'Demographics', icon: User },
+        { id: 2, label: 'Clinical Info', icon: FileText },
+        { id: 3, label: 'Imaging', icon: UploadCloud },
+    ];
 
     return (
-        <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-900 transition-colors">
-            <div className="container mx-auto px-4 max-w-5xl">
+        <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-950 transition-colors">
+            <div className="container mx-auto px-4 max-w-4xl">
 
-                {/* Header Section */}
-                <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Radiology Request Form</h1>
-                        <p className="text-slate-500 dark:text-slate-400 mt-1">
-                            Use this form to submit chest X-ray scans for AI-assisted analysis.
-                        </p>
-                    </div>
-                    <div className="text-right">
-                        <div className="text-sm font-bold text-slate-500 uppercase tracking-wide">Form ID</div>
-                        <div className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{patientId}</div>
-                    </div>
+                {/* Stepper UI */}
+                <div className="flex items-center justify-between mb-12 relative px-4">
+                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 dark:bg-slate-800 -translate-y-1/2 -z-10"></div>
+                    {steps.map((s, idx) => (
+                        <div key={s.id} className="flex flex-col items-center gap-3">
+                            <motion.div
+                                animate={{
+                                    scale: activeStep === s.id ? 1.2 : 1,
+                                    backgroundColor: activeStep >= s.id ? '#10b981' : (activeStep < s.id ? '#e2e8f0' : '#1e293b')
+                                }}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg transition-colors`}
+                            >
+                                {activeStep > s.id ? <CheckCircle2 size={20} /> : <s.icon size={18} />}
+                            </motion.div>
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${activeStep === s.id ? 'text-emerald-500' : 'text-slate-400'}`}>
+                                {s.label}
+                            </span>
+                        </div>
+                    ))}
                 </div>
 
-                {/* Main Form Container */}
-                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-
-                    {/* Form Header Strip */}
-                    <div className="bg-slate-100 dark:bg-slate-900/50 px-8 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                            <Activity className="text-emerald-500" size={20} />
-                            <span className="font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider text-sm">New Case Entry</span>
-                        </div>
-                        <div className="text-sm text-slate-500">
-                            {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                        </div>
-                    </div>
-
-                    <form onSubmit={handleAnalyze} className="p-8">
-
-                        {/* Section 1: Patient Demographics */}
-                        <div className="mb-10">
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2">
-                                <User className="text-emerald-500" size={20} />
-                                Patient Demographics
-                            </h3>
-
-                            <div className="grid md:grid-cols-12 gap-6">
-                                {/* Name */}
-                                <div className="md:col-span-8 space-y-2">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                        Patient Full Name <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        required
-                                        value={formData.name}
-                                        onChange={handleInputChange}
-                                        placeholder="Enter full legal name"
-                                        className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
-                                    />
+                <form onSubmit={handleAnalyze}>
+                    <AnimatePresence mode="wait">
+                        {/* Step 1: Demographics */}
+                        {activeStep === 1 && (
+                            <motion.div
+                                key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                                className="space-y-8"
+                            >
+                                <div className="text-center mb-8">
+                                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Patient Information</h1>
+                                    <p className="text-slate-500 font-medium">Capture essential demographics for clinical correlation.</p>
                                 </div>
 
-                                {/* Patient ID (Read Only) */}
-                                <div className="md:col-span-4 space-y-2">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                        Patient ID
-                                    </label>
-                                    <div className="relative">
-                                        <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                        <input
-                                            type="text"
-                                            readOnly
-                                            value={patientId}
-                                            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/50 text-slate-500 font-mono"
-                                        />
+                                <Card className="p-8 border-none shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name</label>
+                                            <input type="text" name="name" required value={formData.name} onChange={handleInputChange} placeholder="John Doe" className="input-field" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date of Birth</label>
+                                            <input type="date" name="dob" value={formData.dob} onChange={handleInputChange} className="input-field dark:[color-scheme:dark]" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Age</label>
+                                            <input type="number" name="age" required value={formData.age} onChange={handleInputChange} className="input-field" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Gender</label>
+                                            <select name="gender" required value={formData.gender} onChange={handleInputChange} className="input-field">
+                                                <option value="male">Male</option>
+                                                <option value="female">Female</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Weight (kg)</label>
+                                            <input type="text" name="weight" value={formData.weight} onChange={handleInputChange} className="input-field" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone</label>
+                                            <input type="tel" name="phone" required value={formData.phone} onChange={handleInputChange} className="input-field" />
+                                        </div>
                                     </div>
-                                </div>
-
-                                {/* DOB */}
-                                <div className="md:col-span-4 space-y-2">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                        Date of Birth
-                                    </label>
-                                    <div className="relative">
-                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                        <input
-                                            type="date"
-                                            name="dob"
-                                            value={formData.dob}
-                                            onChange={handleInputChange}
-                                            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:[color-scheme:dark]"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Age */}
-                                <div className="md:col-span-4 space-y-2">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                        Age <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="age"
-                                        required
-                                        value={formData.age}
-                                        onChange={handleInputChange}
-                                        placeholder="Age"
-                                        className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                    />
-                                </div>
-
-                                {/* Gender */}
-                                <div className="md:col-span-4 space-y-2">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                        Gender <span className="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        name="gender"
-                                        required
-                                        value={formData.gender}
-                                        onChange={handleInputChange}
-                                        className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                    >
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-
-                                {/* Weight */}
-                                <div className="md:col-span-6 space-y-2">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                        Weight (kg) <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="weight"
-                                        required
-                                        value={formData.weight}
-                                        onChange={handleInputChange}
-                                        placeholder="e.g. 75"
-                                        className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                    />
-                                </div>
-
-                                {/* Contact Info */}
-                                <div className="md:col-span-6 space-y-2">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Email Address</label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            value={formData.email}
-                                            onChange={handleInputChange}
-                                            placeholder="patient@email.com"
-                                            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="md:col-span-12 space-y-2">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                        Phone Number <span className="text-red-500">*</span>
-                                    </label>
-                                    <div className="relative">
-                                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                        <input
-                                            type="tel"
-                                            name="phone"
-                                            required
-                                            value={formData.phone}
-                                            onChange={handleInputChange}
-                                            placeholder="(555) 123-4567"
-                                            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Section 2: Clinical Information */}
-                        <div className="mb-10">
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2">
-                                <FileText className="text-emerald-500" size={20} />
-                                Clinical Information
-                            </h3>
-
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                        Clinical History / Reason for Examination
-                                    </label>
-                                    <textarea
-                                        name="clinicalNotes"
-                                        value={formData.clinicalNotes}
-                                        onChange={handleInputChange}
-                                        rows="4"
-                                        placeholder="Describe patient symptoms, history of present illness, or specific clinical questions..."
-                                        className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all resize-none"
-                                    ></textarea>
-                                </div>
-
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <div className="flex items-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                        <input type="checkbox" className="w-4 h-4 text-emerald-500 rounded focus:ring-emerald-500" />
-                                        <span className="text-sm text-slate-700 dark:text-slate-300">Cough</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                        <input type="checkbox" className="w-4 h-4 text-emerald-500 rounded focus:ring-emerald-500" />
-                                        <span className="text-sm text-slate-700 dark:text-slate-300">Fever</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                        <input type="checkbox" className="w-4 h-4 text-emerald-500 rounded focus:ring-emerald-500" />
-                                        <span className="text-sm text-slate-700 dark:text-slate-300">Shortness of Breath</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                        <input type="checkbox" className="w-4 h-4 text-emerald-500 rounded focus:ring-emerald-500" />
-                                        <span className="text-sm text-slate-700 dark:text-slate-300">Chest Pain</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Section 3: Imaging Details */}
-                        <div className="mb-8">
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2">
-                                <Activity className="text-emerald-500" size={20} />
-                                Diagnostic Imaging
-                            </h3>
-
-                            <div className="grid md:grid-cols-1 gap-8">
-                                <div className="space-y-4">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                        Patient Type Classification
-                                    </label>
-                                    <div className="flex bg-slate-100 dark:bg-slate-900/50 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 w-fit">
-                                        <button
-                                            type="button"
-                                            onClick={() => setFormData(prev => ({ ...prev, patientType: 'adult' }))}
-                                            className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${formData.patientType === 'adult'
-                                                ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                                                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-                                                }`}
-                                        >
-                                            Adult
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setFormData(prev => ({ ...prev, patientType: 'pediatric' }))}
-                                            className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${formData.patientType === 'pediatric'
-                                                ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                                                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-                                                }`}
-                                        >
-                                            Pediatric (Child)
-                                        </button>
-                                    </div>
-                                    <p className="text-xs text-slate-500">
-                                        * Select 'Pediatric' for patients under 18 or 'Adult' for standard analysis models.
-                                    </p>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                        Upload Study (DICOM / JPEG / PNG)
-                                    </label>
-                                    <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-8 bg-slate-50/50 dark:bg-slate-900/20 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                        <FileUpload onFileSelect={(f) => setFile(f)} />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Submit Section */}
-                        <div className="pt-6 border-t border-slate-200 dark:border-slate-700 flex flex-col items-center">
-                            {!analyzing && (
-                                <p className="text-xs text-slate-500 mb-4 max-w-lg text-center">
-                                    By submitting this form, you confirm that you have the necessary authorization to process this patient data for diagnostic purposes.
-                                </p>
-                            )}
-
-                            <div className={`transition-all duration-500 w-full ${analyzing ? 'opacity-100' : 'opacity-100'}`}>
-                                {!analyzing ? (
-                                    <div className="flex justify-end">
-                                        <Button type="submit" className="w-full text-lg font-bold py-4 shadow-xl hover:shadow-emerald-500/20">
-                                            Submit Request for Analysis
+                                    <div className="mt-8 flex justify-end">
+                                        <Button onClick={() => setActiveStep(2)} type="button" className="px-8 py-3 rounded-xl gap-2">
+                                            Continue <ArrowRight size={18} />
                                         </Button>
                                     </div>
-                                ) : (
-                                    <div className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
-                                        <div className="flex justify-between text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
-                                            <span className={stage >= 1 ? 'text-emerald-500 font-bold' : ''}>1. Uploading</span>
-                                            <span className={stage >= 2 ? 'text-emerald-500 font-bold' : ''}>2. Processing</span>
-                                            <span className={stage >= 3 ? 'text-emerald-500 font-bold' : ''}>3. Reporting</span>
+                                </Card>
+                            </motion.div>
+                        )}
+
+                        {/* Step 2: Clinical */}
+                        {activeStep === 2 && (
+                            <motion.div
+                                key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                                className="space-y-8"
+                            >
+                                <div className="text-center mb-8">
+                                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Clinical History</h1>
+                                    <p className="text-slate-500 font-medium">Add symptoms and prior history for AI context.</p>
+                                </div>
+
+                                <Card className="p-8 border-none shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                                    <div className="space-y-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Reason for Examination</label>
+                                            <textarea name="clinicalNotes" rows="4" value={formData.clinicalNotes} onChange={handleInputChange} className="input-field resize-none h-32" placeholder="e.g. Persistent cough for 3 weeks..."></textarea>
                                         </div>
-                                        <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mb-4">
-                                            <div
-                                                className="h-full bg-emerald-500 transition-all duration-500 ease-out relative"
-                                                style={{ width: `${progress}%` }}
-                                            >
-                                                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                                            </div>
-                                        </div>
-                                        <div className="text-center">
-                                            {stage < 3 ? (
-                                                <div className="flex items-center justify-center gap-3 text-emerald-600 dark:text-emerald-400">
-                                                    <Loader2 className="animate-spin" size={20} />
-                                                    <span className="font-mono">Processing Request ID: {patientId}...</span>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center justify-center gap-3 text-emerald-600 dark:text-emerald-400 font-bold">
-                                                    <CheckCircle2 size={24} />
-                                                    <span>Analysis Complete. Redirecting...</span>
-                                                </div>
-                                            )}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {['Cough', 'Fever', 'Dyspnea', 'Chest Pain'].map(symp => (
+                                                <label key={symp} className="flex items-center gap-3 p-4 rounded-xl border border-slate-100 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                    <input type="checkbox" className="w-5 h-5 accent-emerald-500" />
+                                                    <span className="text-sm font-bold">{symp}</span>
+                                                </label>
+                                            ))}
                                         </div>
                                     </div>
-                                )}
-                            </div>
-                        </div>
-                    </form>
+                                    <div className="mt-8 flex justify-between">
+                                        <Button onClick={() => setActiveStep(1)} type="button" variant="ghost" className="px-8 py-3">Back</Button>
+                                        <Button onClick={() => setActiveStep(3)} type="button" className="px-8 py-3 rounded-xl gap-2">
+                                            Continue <ArrowRight size={18} />
+                                        </Button>
+                                    </div>
+                                </Card>
+                            </motion.div>
+                        )}
+
+                        {/* Step 3: Imaging */}
+                        {activeStep === 3 && (
+                            <motion.div
+                                key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                                className="space-y-8"
+                            >
+                                <div className="text-center mb-8">
+                                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Upload Scanning</h1>
+                                    <p className="text-slate-500 font-medium">Submit high-resolution radiographic data.</p>
+                                </div>
+
+                                <Card className="p-8 border-none shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                                    <div className="space-y-8">
+                                        <div className="flex items-center justify-center">
+                                            <div className="flex bg-slate-100 dark:bg-slate-900/80 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+                                                <button type="button" onClick={() => setFormData(p => ({ ...p, patientType: 'adult' }))} className={`px-10 py-3 rounded-xl text-sm font-black transition-all ${formData.patientType === 'adult' ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-900'}`}>ADULT</button>
+                                                <button type="button" onClick={() => setFormData(p => ({ ...p, patientType: 'pediatric' }))} className={`px-10 py-3 rounded-xl text-sm font-black transition-all ${formData.patientType === 'pediatric' ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-900'}`}>PEDIATRIC</button>
+                                            </div>
+                                        </div>
+
+                                        {!previewUrl ? (
+                                            <div className="border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] p-12 text-center group hover:border-emerald-500/30 transition-colors">
+                                                <FileUpload onFileSelect={handleFileChange} />
+                                            </div>
+                                        ) : (
+                                            <div className="relative rounded-[2rem] overflow-hidden group border-4 border-slate-100 dark:border-slate-800 aspect-[4/3] max-w-md mx-auto shadow-2xl">
+                                                <img src={previewUrl} className="w-full h-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <button onClick={() => setFile(null) || setPreviewUrl(null)} className="p-4 bg-red-500 text-white rounded-full shadow-2xl transform scale-90 group-hover:scale-100 transition-transform">
+                                                        <X size={32} />
+                                                    </button>
+                                                </div>
+                                                <div className="absolute bottom-4 left-4 right-4 p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 flex justify-between items-center">
+                                                    <span className="text-xs font-black text-white uppercase tracking-widest">{file.name}</span>
+                                                    <span className="text-[10px] font-bold text-emerald-400">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {!analyzing ? (
+                                        <div className="mt-12 flex justify-between items-center">
+                                            <Button onClick={() => setActiveStep(2)} type="button" variant="ghost" className="px-8 py-3">Back</Button>
+                                            <Button type="submit" disabled={!file} className="px-12 py-4 rounded-2xl gap-2 text-lg font-black shadow-2xl shadow-emerald-500/30 disabled:opacity-30 transition-all">
+                                                Run Deep Analysis <Zap size={20} className="fill-current" />
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-12 p-10 bg-slate-900 rounded-[2.5rem] text-center border border-white/5 shadow-3xl">
+                                            <div className="mb-8">
+                                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">Processing Inference Engine</div>
+                                                <div className="flex justify-between items-end mb-4 px-2">
+                                                    <span className="text-2xl font-black text-white">{Math.round(progress)}%</span>
+                                                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{stage === 1 ? 'Uploading Study' : (stage === 2 ? 'Neural Processing' : 'Building Report')}</span>
+                                                </div>
+                                                <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                                    <motion.div
+                                                        animate={{ width: `${progress}%` }}
+                                                        className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-blue-500 shadow-[0_0_20px_rgba(16,185,129,0.5)]"
+                                                        style={{ willChange: 'width' }}
+                                                    ></motion.div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-center gap-4 text-emerald-500/80">
+                                                <Loader2 className="animate-spin" size={24} />
+                                                <span className="text-sm font-black uppercase tracking-widest">Optimizing Voxels...</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </Card>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </form>
+
+                <div className="mt-12 flex flex-col md:flex-row gap-8 items-center justify-center opacity-40 grayscale pointer-events-none">
+                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                        <ShieldCheck size={16} /> HIPAA Secure
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                        <Activity size={16} /> Edge Processing
+                    </div>
                 </div>
             </div>
+
+            <style>{`
+                .input-field {
+                    width: 100%;
+                    padding: 0.875rem 1.25rem;
+                    border-radius: 1rem;
+                    border: 1px solid rgba(226, 232, 240, 1);
+                    background-color: rgba(248, 250, 252, 1);
+                    font-size: 0.875rem;
+                    font-weight: 700;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    outline: none;
+                }
+                .dark .input-field {
+                    border-color: rgba(30, 41, 59, 1);
+                    background-color: rgba(15, 23, 42, 0.9);
+                    color: white;
+                }
+                .input-field:focus {
+                    border-color: #10b981;
+                    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+                    background-color: white;
+                }
+                .dark .input-field:focus {
+                    background-color: #0f172a;
+                }
+                ::-webkit-calendar-picker-indicator {
+                    filter: invert(0);
+                    cursor: pointer;
+                }
+                .dark ::-webkit-calendar-picker-indicator {
+                    filter: invert(1);
+                }
+            `}</style>
         </div>
     );
 };
+
 
 export default UploadPage;

@@ -65,17 +65,19 @@ class ViTGradCAM:
 
 def overlay_heatmap(original_pil_img, heatmap, alpha=0.4):
     """
-    Overlays the 14x14 heatmap onto the 224x224 original image using Jet colormap.
+    Overlays the 14x14 heatmap onto the original image, preserving its aspect ratio.
     """
-    # Resize heatmap to match standard input size
-    heatmap_resized = cv2.resize(heatmap, (224, 224))
+    width, height = original_pil_img.size
+    
+    # Resize heatmap to match original image dimensions
+    heatmap_resized = cv2.resize(heatmap, (width, height))
     
     # Apply Color Map (Jet: Blue=Cold/Normal, Red=Hot/Attention)
     heatmap_colored = cv2.applyColorMap(np.uint8(255 * heatmap_resized), cv2.COLORMAP_JET)
     heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)
     
     # Blend with original image
-    img_np = np.array(original_pil_img.resize((224, 224)))
+    img_np = np.array(original_pil_img)
     superimposed = (heatmap_colored * alpha) + (img_np * (1 - alpha))
     
     return Image.fromarray(np.uint8(superimposed))
