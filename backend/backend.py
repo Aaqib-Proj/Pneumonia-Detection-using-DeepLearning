@@ -53,23 +53,25 @@ class PneumaAI_Backend:
         Extracts real patient data and converts high-bit X-ray to visible image.
         """
         try:
-            # 1. Read DICOM Object
+            # 1. Read DICOM Object from memory
             dicom = pydicom.dcmread(BytesIO(file_bytes))
             
             # 2. Extract Metadata safely (Defaults to "Unknown" if missing)
+            # Format: Name, ID, Age, Sex, Modality
             meta = {
                 "name": str(dicom.get("PatientName", "Anonymous")),
-                "id": str(dicom.get("PatientID", f"PT-{str(uuid.uuid4())[:6].upper()}")),
-                "age": str(dicom.get("PatientAge", "??")).replace("Y", ""),
+                "id": str(dicom.get("PatientID", f"PT-{str(uuid.uuid4())[:6]}")),
+                "age": str(dicom.get("PatientAge", "??")).replace("Y", ""), # Clean '045Y' to '45'
                 "sex": str(dicom.get("PatientSex", "U")),
-                "date": dicom.get("StudyDate", datetime.datetime.now().strftime("%d/%m/%Y")),
+                "date": dicom.get("StudyDate", datetime.datetime.now().strftime("%Y%m%d")),
                 "modality": str(dicom.get("Modality", "CR"))
             }
             
-            # 3. Handle Image Data (DICOM is often 16-bit, we need 8-bit)
+            # 3. Handle Image Data (DICOM is often 16-bit, we need 8-bit for AI)
             img = dicom.pixel_array.astype(float)
+            
             # Normalize to 0-255 range
-            img = (np.maximum(img, 0) / (img.max() if img.max() > 0 else 1.0)) * 255.0
+            img = (np.maximum(img, 0) / img.max()) * 255.0
             img = np.uint8(img)
             
             # Convert to PIL RGB (Model expects 3 channels)
@@ -79,7 +81,8 @@ class PneumaAI_Backend:
             return img_pil, meta
             
         except Exception as e:
-            # If it fails, it's likely just a JPG/PNG
+            # If it fails, it's likely just a JPG/PNG, not a DICOM
+            # print(f"DICOM Load Failed: {e}") 
             return None, None
 
     def enhance_clinical_image(self, image_bytes):
@@ -107,12 +110,22 @@ class PneumaAI_Backend:
         Generates the detailed Quantitative Table by analyzing specific heatmap regions.
         """
         # Map of Lung Lobes to Heatmap Grid Slices (Rows, Cols)
+        # Based on standard chest X-ray anatomy (14x14 grid)
         regions = {
             "Right Upper":  (slice(0, 5), slice(0, 7)),
             "Right Middle": (slice(5, 9), slice(0, 7)),
             "Right Lower":  (slice(9, 14), slice(0, 7)),
             "Left Upper":   (slice(0, 6), slice(7, 14)),
             "Left Lower":   (slice(6, 14), slice(7, 14))
+        }
+
+        # Realistic lung lobe volumes (ml) based on medical literature
+        lobe_volumes = {
+            "Right Upper": 900,
+            "Right Middle": 280,
+            "Right Lower": 920,
+            "Left Upper": 880,
+            "Left Lower": 900
         }
 
         breakdown = []
@@ -125,19 +138,22 @@ class PneumaAI_Backend:
             region_map = heatmap[rows, cols]
             avg_intensity = np.mean(region_map)
             
-            # 2. Simulate Volume (Randomized within realistic bounds)
-            vol = random.randint(850, 950)
-            if "Middle" in name: vol = random.randint(250, 300) # Middle lobe is naturally smaller
+            # 2. Use realistic fixed volumes
+            vol = lobe_volumes[name]
             
-            # 3. Calculate Opacity Score (0-5)
+            # 3. Calculate Opacity Score (0-5) based on heatmap intensity
+            # Scale heatmap intensity (0-1) to opacity score (0-5)
             if label == "Normal":
-                op_score = float(random.uniform(0.0, 0.2))
-                inf_prob = float(random.uniform(0.1, 1.5))
+                # For normal cases, use actual heatmap but keep scores very low
+                op_score = float(avg_intensity * 0.5)  # Max 0.5 for normal
+                inf_prob = float(avg_intensity * 2.0)  # Max 2% for normal
             else:
-                # Intensity (0-1) * 5 * Confidence
-                op_score = float(avg_intensity * 5.0 * (conf_score if conf_score > 0.5 else 0.5))
-                op_score = min(max(op_score, 0.1), 4.8) # Clamp
-                inf_prob = float(avg_intensity * 100 * conf_score)
+                # For pneumonia cases, scale intensity to 0-5 range
+                # Use confidence to modulate the score
+                base_score = avg_intensity * 5.0
+                op_score = float(base_score * (0.7 + 0.3 * conf_score))  # Confidence adds 0-30% boost
+                op_score = min(max(op_score, 0.0), 5.0)  # Clamp to 0-5
+                inf_prob = float(avg_intensity * 100)  # Direct percentage from intensity
             
             # 4. Opacity Volume (ml)
             op_vol = int((op_score / 5.0) * vol)
@@ -156,7 +172,8 @@ class PneumaAI_Backend:
 
         # Aggregate Metrics
         lung_involvement = round(float(total_op_vol / total_vol) * 100, 1) if total_vol > 0 else 0
-        avg_opacity = round(float(total_opacity / 5), 1)
+        # Calculate average opacity score across all lobes
+        avg_opacity = round(float(total_opacity / len(regions)), 1)
 
         return {
             "total_opacity_score": float(avg_opacity),

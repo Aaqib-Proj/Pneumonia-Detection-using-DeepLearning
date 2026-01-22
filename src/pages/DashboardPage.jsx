@@ -5,7 +5,7 @@ import {
     Maximize2, X, Activity, ShieldAlert,
     Monitor, Layout, Layers, AlertCircle,
     CheckCircle2, Clock, Scale, Info, User,
-    ChevronRight, ArrowLeft
+    ChevronRight, ArrowLeft, Calendar
 } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
@@ -307,10 +307,10 @@ const DashboardPage = () => {
                                         />
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span className="text-5xl font-black text-slate-900 dark:text-white leading-none tracking-tighter">
+                                        <span className="text-4xl font-black text-slate-900 dark:text-white leading-none tracking-tighter">
                                             {report?.diagnosis?.confidence || '0.0%'}
                                         </span>
-                                        <span className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mt-3">AI Confidence</span>
+                                        <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mt-2">AI Confidence</span>
                                     </div>
                                 </div>
 
@@ -335,7 +335,7 @@ const DashboardPage = () => {
                                     </div>
                                     <div className="flex items-center justify-center gap-2 mt-1">
                                         <div className={`w-2 h-2 rounded-full ${isPneumonia ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`}></div>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detection Mode: {report?.meta?.model || 'ViT 2.4-S'}</span>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detection Mode: {report?.meta?.model || 'Vision Transformer'}</span>
                                     </div>
                                 </div>
                             </div>

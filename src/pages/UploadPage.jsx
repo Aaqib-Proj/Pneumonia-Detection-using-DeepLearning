@@ -77,6 +77,9 @@ const UploadPage = () => {
             }, 600);
 
             const report = await uploadXRay(file, formData.patientType, formData);
+            if (report.error) {
+                throw new Error(report.error);
+            }
 
             clearInterval(progressInterval);
             setProgress(100);

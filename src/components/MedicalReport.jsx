@@ -98,7 +98,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                         <div className="text-3xl font-black tracking-tighter mb-1">
                             {formatConfidence(report?.diagnosis?.confidence)}
                         </div>
-                        <p className="text-[8px] font-bold text-slate-500 uppercase mb-3">AI Confidence</p>
+                        <p className="text-[7px] font-bold text-slate-500 uppercase mb-3">AI Confidence</p>
 
                         <div className="w-full pt-3 border-t border-white/10 mt-1">
                             <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pneumonia match</p>
@@ -197,7 +197,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                             </div>
                         </div>
                         <div className="text-[8px] text-slate-300 max-w-[400px]">
-                            DISCLAIMER: This diagnostic assistive tool uses Vision Transformer models (ViT 2.4-S) to analyze radiographic patterns.
+                            DISCLAIMER: This diagnostic assistive tool uses Vision Transformer models to analyze radiographic patterns.
                             It is intended for preliminary screening and triage. FINAL CLINICAL DIAGNOSIS MUST BE MADE BY A QUALIFIED RADIOLOGIST.
                         </div>
                     </div>
