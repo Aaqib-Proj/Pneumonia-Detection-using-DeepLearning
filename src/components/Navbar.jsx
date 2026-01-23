@@ -73,13 +73,6 @@ const Navbar = () => {
                             <div className="flex items-center gap-4 border-l border-slate-200 dark:border-white/10 pl-10">
                                 <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-2xl border border-white/5">
                                     <ThemeToggle />
-                                    <button className="p-2 text-slate-400 hover:text-emerald-500 transition-colors">
-                                        <Search size={20} />
-                                    </button>
-                                    <button className="p-2 text-slate-400 hover:text-emerald-500 transition-colors relative">
-                                        <Bell size={20} />
-                                        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
-                                    </button>
                                 </div>
 
                                 {/* Dynamic Page Actions */}
@@ -111,9 +104,7 @@ const Navbar = () => {
                                                 <Settings size={20} />
                                             </button>
                                         </NavLink>
-                                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white font-black shadow-lg cursor-pointer hover:scale-105 transition-transform">
-                                            <User size={20} />
-                                        </div>
+
                                     </div>
                                 )}
                             </div>

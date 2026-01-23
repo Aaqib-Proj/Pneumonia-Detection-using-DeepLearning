@@ -48,6 +48,12 @@ async def analyze_xray(
         # Run Analysis
         report = backend_engine.generate_report(image_bytes, patient_type)
 
+        # Inject Patient Data into Report Meta for Frontend Display
+        if patient_name:
+            report['meta']['name'] = patient_name
+        if patient_age and patient_gender:
+            report['meta']['age_sex'] = f"{patient_age} / {patient_gender}"
+        
         # Convert Input Image to Base64 for Storage
         original_b64 = base64.b64encode(image_bytes).decode('utf-8')
         original_data_uri = f"data:image/png;base64,{original_b64}"

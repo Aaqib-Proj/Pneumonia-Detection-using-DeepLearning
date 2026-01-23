@@ -233,7 +233,7 @@ const DashboardPage = () => {
                                 </h3>
                                 <div className="space-y-4">
                                     <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                                        <h4 className="text-xs font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Primary Findings</h4>
+                                        <h4 className="text-xs font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Explainable AI</h4>
                                         <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed italic">
                                             "{report?.clinical?.findings || 'Waiting for diagnostic results...'}"
                                         </p>
@@ -253,7 +253,7 @@ const DashboardPage = () => {
 
                             <Card className="p-6 border-slate-100 dark:border-slate-800 shadow-sm">
                                 <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                                    <Monitor size={18} className="text-blue-500" /> AI Quantatitive Report
+                                    <Monitor size={18} className="text-blue-500" /> AI Quantitative Report
                                 </h3>
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800">
