@@ -8,10 +8,16 @@ import base64
 import cv2
 import random
 import pydicom
+import os
+from groq import Groq
 from io import BytesIO
 from PIL import Image
 from torchvision import transforms
 from heatmap_utils import ViTGradCAM, overlay_heatmap
+from dotenv import load_dotenv
+
+# Load Environment Variables
+load_dotenv()
 
 class PneumaAI_Backend:
     def __init__(self):
@@ -20,15 +26,28 @@ class PneumaAI_Backend:
         
         # --- LOAD BOTH MODELS ---
         print("   1. Loading Pediatric Specialist...")
-        self.model_pediatric = self._load_model("best_vit_pediatric.pth")
+        self.model_pediatric = self._load_model("pediatric_vit_tiny_15ep.pth")
         
         print("   2. Loading Adult Specialist...")
-        self.model_adult = self._load_model("best_vit_adult.pth")
+        self.model_adult = self._load_model("adult_vit_tiny_15ep.pth")
         
         # Initialize Explainers (Pre-loaded for speed)
         self.explainer_pediatric = ViTGradCAM(self.model_pediatric)
         self.explainer_adult = ViTGradCAM(self.model_adult)
         
+        # --- GROQ INTEGRATION ---
+        self.groq_available = False
+        api_key = os.getenv("GROQ_API_KEY")
+        if api_key and api_key != "your_groq_api_key_here":
+            try:
+                self.groq_client = Groq(api_key=api_key)
+                self.groq_available = True
+                print("   3. Groq AI Integration Active ✅")
+            except Exception as e:
+                print(f"   ⚠️ Groq Config Failed: {e}")
+        else:
+            print("   ⚠️ Groq API Key missing. LLM Explanations Disabled.")
+
         # Standard Transform
         self.transform = transforms.Compose([
             transforms.Resize((224, 224)),
@@ -38,7 +57,7 @@ class PneumaAI_Backend:
 
     def _load_model(self, path):
         """Helper to safely load a model file."""
-        model = timm.create_model('vit_tiny_patch16_224', pretrained=False, num_classes=2)
+        model = timm.create_model('vit_tiny_patch16_224', pretrained=False, num_classes=3)
         try:
             state_dict = torch.load(path, map_location=self.device)
             model.load_state_dict(state_dict)
@@ -181,7 +200,7 @@ class PneumaAI_Backend:
             "breakdown": breakdown
         }
 
-    def _get_clinical_text(self, label, conf_score, lobe_data):
+    def _get_clinical_text(self, label, p_type, conf_score, lobe_data):
         """Generates the 'Doctor's Note'."""
         
         # Identify worst affected lobe
@@ -196,22 +215,120 @@ class PneumaAI_Backend:
             }
         else:
             lobe_name = worst_lobe['region']
-            if conf_score < 0.75:
-                sev = "Low"
-                rec = f"Mild opacity detected in {lobe_name} Lobe. Correlate with clinical markers for early-stage pneumonia."
-            elif conf_score < 0.90:
-                sev = "Moderate"
-                rec = f"Significant focal consolidation in {lobe_name} Lobe. Probable bacterial pneumonia. Prompt Pulmonology referral suggested."
-            else:
-                sev = "Severe"
-                rec = f"URGENT: Extensive air-space opacification in {lobe_name} Lobe. High suspicion of acute pneumonia. Immediate clinical stabilization required."
+            if p_type == "Bacterial":
+                type_msg = "Bacterial Pneumonia (requires antibiotics)"
+                if conf_score < 0.75:
+                    sev = "Low"
+                    rec = f"Mild focal consolidation in {lobe_name} Lobe. Probable early Bacterial Pneumonia. Clinical correlation and potential antibiotic therapy recommended."
+                elif conf_score < 0.90:
+                    sev = "Moderate"
+                    rec = f"Significant focal consolidation in {lobe_name} Lobe. Classical Bacterial Pneumonia pattern. Prompt Pulmonology referral and antibiotic regimen suggested."
+                else:
+                    sev = "Severe"
+                    rec = f"URGENT: Extensive air-space opacification in {lobe_name} Lobe. High suspicion of acute Bacterial Pneumonia. Immediate clinical stabilization and IV antibiotics required."
+            else: # Viral
+                type_msg = "Viral Pneumonia (supportive care)"
+                if conf_score < 0.75:
+                    sev = "Low"
+                    rec = f"Mild interstitial opacities in {lobe_name} Lobe. Suggestive of early Viral Pneumonia. Monitor oxygen saturation and provide supportive care."
+                elif conf_score < 0.90:
+                    sev = "Moderate"
+                    rec = f"Diffuse interstitial infiltrates noted in {lobe_name} Lobe. Pattern consistent with Viral Pneumonia. Supportive therapy and rest indicated."
+                else:
+                    sev = "Severe"
+                    rec = f"URGENT: Widespread ground-glass opacities in {lobe_name} Lobe. Severe Viral Pneumonia / Pneumonitis. Critical care consultation for respiratory support recommended."
 
             return {
-                "findings": f"Multifocal or focal opacity observed predominantly in the {lobe_name} Lobe. The radiographic appearance is highly suggestive of {sev.lower()} inflammatory infiltrate.",
+                "findings": f"Multifocal or focal opacity observed predominantly in the {lobe_name} Lobe. The radiographic appearance is highly suggestive of {sev.lower()} {p_type.lower()} inflammatory infiltrate.",
                 "heart": "Cardiac borders may be partially obscured by adjacent infiltrate.",
                 "diaphragm": "Trace blunting of the costophrenic angle on the affected side.",
                 "recommendation": rec
             }
+
+    def _generate_groq_analysis(self, original_img, heatmap_img, diagnosis_info):
+        """
+        Calls Groq Llama 3.2 Vision API to generate a professional medical explanation.
+        """
+        if not self.groq_available:
+            return "Groq AI explanation is currently unavailable. Please check your API key."
+
+        try:
+            print(f"🧬 Starting Groq (Llama 3.2 Vision) Analysis for {diagnosis_info['label']}...")
+            
+            # Convert PIL images to base64 for Groq
+            def pil_to_base64(img):
+                buf = BytesIO()
+                img.save(buf, format="PNG")
+                return base64.b64encode(buf.getvalue()).decode('utf-8')
+
+            original_b64 = pil_to_base64(original_img)
+            heatmap_b64 = pil_to_base64(heatmap_img)
+
+            prompt = f"""
+            ROLE: Senior Board-Certified Radiologist & Consultant Pulmonologist.
+            CONTEXT: Clinical Chest X-ray analysis + Grad-CAM Heatmap correlation.
+            DIAGNOSIS: {diagnosis_info['label']} ({diagnosis_info['type']})
+            AI CONFIDENCE: {diagnosis_info['confidence_display']}
+
+            MANDATE: Output a formal, structured clinical report in JSON format. 
+            Use dense medical terminology (e.g., 'reticulonodular opacities', 'hilar lymphadenopathy'). 
+            Do NOT mention being an AI.
+
+            JSON STRUCTURE REQUIRED:
+            {{
+                "radiographic_observations": [
+                    "Detailed anatomical description 1",
+                    "Detailed anatomical description 2",
+                    "Description of lung lobes/markings"
+                ],
+                "heatmap_correlation": "Technical analysis of the highlighted pixel regions and their clinical validity",
+                "clinical_summary": "2-3 sentence authoritative clinical interpretation",
+                "next_steps": [
+                    "Clinical recommendation 1",
+                    "Clinical recommendation 2"
+                ]
+            }}
+            """
+
+            # Call Groq Vision in JSON Mode
+            print("   📡 Dispatching to Groq Cloud (Structured JSON Data)...")
+            completion = self.groq_client.chat.completions.create(
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a professional Radiologist. Always respond in valid JSON format."
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{original_b64}"}
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{heatmap_b64}"}
+                            }
+                        ]
+                    }
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.1,
+                max_tokens=2048,
+            )
+            
+            content = completion.choices[0].message.content
+            if not content:
+                print("   ⚠️ Empty response from Groq")
+                return "{}"
+                
+            print("   ✅ Groq Structured Analysis Complete.")
+            return content
+        except Exception as e:
+            print(f"   ❌ Groq Error: {e}")
+            return f"Error generating Groq explanation: {str(e)}"
 
     def generate_report(self, image_bytes, patient_type):
         start_time = time.time()
@@ -252,15 +369,26 @@ class PneumaAI_Backend:
             probs = torch.softmax(output, dim=1)
             confidence, class_idx = torch.max(probs, 1)
         
-        label = "Pneumonia" if class_idx.item() == 1 else "Normal"
+        # Mapping: 0: Bacterial, 1: Normal, 2: Viral
+        classes = ['Bacterial', 'Normal', 'Viral']
+        p_type_pred = classes[class_idx.item()]
         conf_score = float(confidence.item())
+        
+        if p_type_pred == "Normal":
+            label = "Normal"
+            p_type = "None"
+            message = f"Normal diagnostic outcome ({conf_score:.1%} confidence)"
+        else:
+            label = "Pneumonia"
+            p_type = p_type_pred
+            message = f"{p_type_pred} Pneumonia detected ({conf_score:.1%} confidence)"
         
         # --- 4. EXPLAIN ---
         heatmap_grid = active_explainer.generate_cam(tensor, target_class=class_idx.item())
         
         # --- 5. METRICS ---
         quant_data = self._calculate_lobe_metrics(heatmap_grid, conf_score, label)
-        clinical = self._get_clinical_text(label, conf_score, quant_data)
+        clinical = self._get_clinical_text(label, p_type, conf_score, quant_data)
 
         # Visuals
         heatmap_img = overlay_heatmap(img, heatmap_grid, alpha=0.4)
@@ -278,7 +406,7 @@ class PneumaAI_Backend:
 
         p_prob = conf_score if label == "Pneumonia" else (1.0 - conf_score)
 
-        # --- 6. FINAL JSON ---
+        # --- 6. FINAL JSON (AI Explanation is fetched asynchronously via /api/explain) ---
         return {
             "meta": {
                 "id": meta["id"],
@@ -291,7 +419,11 @@ class PneumaAI_Backend:
             },
             "diagnosis": {
                 "label": label,
-                "confidence": f"{conf_score:.1%}",
+                "prediction": label,
+                "type": p_type,
+                "confidence": conf_score,
+                "confidence_display": f"{conf_score:.1%}",
+                "message": message,
                 "severity": severity,
                 "pneumonia_prob": f"{p_prob:.1%}"
             },

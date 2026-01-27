@@ -15,6 +15,8 @@ import jsPDF from 'jspdf';
 import { useHeader } from '../context/HeaderContext';
 import MedicalReport from '../components/MedicalReport';
 import { motion, AnimatePresence } from 'framer-motion';
+import { explainXRay } from '../services/api';
+import AIChat from '../components/AIChat';
 
 const DashboardPage = () => {
     const reportRef = useRef(null);
@@ -28,6 +30,7 @@ const DashboardPage = () => {
     const [viewMode, setViewMode] = useState('heatmap'); // 'heatmap' | 'original' | 'side-by-side'
     const [heatmapOpacity, setHeatmapOpacity] = useState(0.7);
     const [report, setReport] = useState(null);
+    const [explanationError, setExplanationError] = useState(null);
 
     useEffect(() => {
         if (location.state?.fileUrl) {
@@ -43,6 +46,49 @@ const DashboardPage = () => {
             }
         }
     }, [location]);
+
+    // Async AI Fetching for Efficiency
+    useEffect(() => {
+        const fetchAIExplanation = async () => {
+            if (!report || report.diagnosis?.ai_explanation || !originalImageSrc || !heatmapSrc || explanationError) return;
+
+            try {
+                const originalResp = await fetch(originalImageSrc);
+                const originalBlob = await originalResp.blob();
+
+                const heatmapResp = await fetch(heatmapSrc);
+                const heatmapBlob = await heatmapResp.blob();
+
+                const result = await explainXRay(
+                    originalBlob,
+                    heatmapBlob,
+                    report.diagnosis.label,
+                    report.diagnosis.type,
+                    report.diagnosis.confidence_display
+                );
+
+                if (result.explanation) {
+                    setReport(prev => ({
+                        ...prev,
+                        diagnosis: {
+                            ...prev.diagnosis,
+                            ai_explanation: result.explanation
+                        }
+                    }));
+                    setExplanationError(null);
+                } else if (result.error) {
+                    setExplanationError(result.error);
+                }
+            } catch (err) {
+                console.error("AI Fetch Error:", err);
+                setExplanationError("AI Engine is temporarily unavailable. Please retry in a moment.");
+            }
+        };
+
+        if (report && !report.diagnosis?.ai_explanation && !explanationError) {
+            fetchAIExplanation();
+        }
+    }, [report, originalImageSrc, heatmapSrc, explanationError]);
 
     // Data for Chart
     const chartData = report?.quantitative?.breakdown?.map(item => ({
@@ -224,33 +270,8 @@ const DashboardPage = () => {
                             </div>
                         </Card>
 
-                        {/* Analysis Breakdown */}
-                        <div className="grid md:grid-cols-2 gap-8">
-                            <Card className="p-6 border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
-                                <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl"></div>
-                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                                    <FileText size={18} className="text-emerald-500" /> Clinical Assessment
-                                </h3>
-                                <div className="space-y-4">
-                                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                                        <h4 className="text-xs font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Explainable AI</h4>
-                                        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed italic">
-                                            "{report?.clinical?.findings || 'Waiting for diagnostic results...'}"
-                                        </p>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 text-center">
-                                            <p className="text-[10px] text-slate-400 font-bold mb-1 uppercase">Heart</p>
-                                            <p className="text-xs font-bold">{report?.clinical?.heart || '--'}</p>
-                                        </div>
-                                        <div className="p-3 rounded-lg border border-slate-100 dark:border-slate-800 text-center">
-                                            <p className="text-[10px] text-slate-400 font-bold mb-1 uppercase">Diaphragm</p>
-                                            <p className="text-xs font-bold">{report?.clinical?.diaphragm || '--'}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Card>
-
+                        {/* Analysis Breakdown - Only Quantitative Report */}
+                        <div className="grid md:grid-cols-1 gap-8">
                             <Card className="p-6 border-slate-100 dark:border-slate-800 shadow-sm">
                                 <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
                                     <Monitor size={18} className="text-blue-500" /> AI Quantitative Report
@@ -283,6 +304,99 @@ const DashboardPage = () => {
                                 </div>
                             </Card>
                         </div>
+
+                        {/* Gemini Medical Analysis */}
+                        <Card className="p-8 border-none shadow-xl bg-white dark:bg-slate-900 relative overflow-hidden ring-1 ring-slate-100 dark:ring-white/5 mt-8">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[60px] -mr-32 -mt-32"></div>
+                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                                    <Activity size={18} />
+                                </div>
+                                Groq AI Medical Analysis (Explainable AI)
+                            </h3>
+                            <div className="relative z-10">
+                                <div className="prose prose-slate dark:prose-invert max-w-none">
+                                    <div className="p-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 leading-relaxed text-slate-700 dark:text-slate-300">
+                                        {report?.diagnosis?.ai_explanation ? (
+                                            (() => {
+                                                try {
+                                                    const data = typeof report.diagnosis.ai_explanation === 'string'
+                                                        ? JSON.parse(report.diagnosis.ai_explanation)
+                                                        : report.diagnosis.ai_explanation;
+
+                                                    return (
+                                                        <div className="space-y-8">
+                                                            <div>
+                                                                <h4 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Radiographic Observations</h4>
+                                                                <div className="grid md:grid-cols-1 gap-3">
+                                                                    {data.radiographic_observations?.map((obs, i) => (
+                                                                        <div key={i} className="flex gap-4 p-3 rounded-xl bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5">
+                                                                            <div className="text-emerald-500 font-black text-xs">0{i + 1}</div>
+                                                                            <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{obs}</div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="grid md:grid-cols-2 gap-8">
+                                                                <div>
+                                                                    <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-4">Neural Heatmap Correlation</h4>
+                                                                    <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 text-sm text-slate-600 dark:text-slate-400 italic leading-relaxed">
+                                                                        {data.heatmap_correlation}
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Interpreted Pathology</h4>
+                                                                    <div className="p-4 rounded-xl bg-slate-900 text-white text-sm font-bold shadow-xl">
+                                                                        {data.clinical_summary}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div>
+                                                                <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mb-4">Clinical Guidance</h4>
+                                                                <div className="flex flex-wrap gap-3">
+                                                                    {data.next_steps?.map((step, i) => (
+                                                                        <div key={i} className="px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider">
+                                                                            {step}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                } catch (e) {
+                                                    return <div className="whitespace-pre-wrap">{report.diagnosis.ai_explanation}</div>;
+                                                }
+                                            })()
+                                        ) : explanationError ? (
+                                            <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
+                                                <AlertCircle className="text-red-500" size={32} />
+                                                <p className="text-red-500 font-bold">{explanationError}</p>
+                                                <Button size="sm" variant="outline" onClick={() => setExplanationError(null)}>
+                                                    Retry Analysis
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
+                                                <div className="w-12 h-12 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin"></div>
+                                                <p className="text-slate-400 italic font-medium">Groq Llama 4 Vision is reasoning through the radiographic specificities...</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="mt-6 flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-t border-slate-100 dark:border-white/5 pt-6">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                        Model: Llama 4 Scout 17B (LPU)
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                        Scope: Multimodal Reasoning
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
                     </div>
 
                     {/* Sidebar Column (4 cols) */}
@@ -308,7 +422,9 @@ const DashboardPage = () => {
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                                         <span className="text-4xl font-black text-slate-900 dark:text-white leading-none tracking-tighter">
-                                            {report?.diagnosis?.confidence || '0.0%'}
+                                            {typeof report?.diagnosis?.confidence === 'number'
+                                                ? `${(report.diagnosis.confidence * 100).toFixed(1)}%`
+                                                : (report?.diagnosis?.confidence || '0.0%')}
                                         </span>
                                         <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mt-2">AI Confidence</span>
                                     </div>
@@ -331,9 +447,16 @@ const DashboardPage = () => {
 
                                 <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5">
                                     <div className={`text-2xl font-black tracking-tighter uppercase ${isPneumonia ? 'text-red-500' : 'text-emerald-500'}`}>
-                                        {report?.diagnosis?.label || 'Calculating...'}
+                                        {report?.diagnosis?.type && report.diagnosis.type !== "None"
+                                            ? `${report.diagnosis.type} Pneumonia`
+                                            : (report?.diagnosis?.label || 'Calculating...')}
                                     </div>
-                                    <div className="flex items-center justify-center gap-2 mt-1">
+                                    <div className="mt-2 px-4 py-2 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                                        <p className={`text-[10px] font-bold leading-tight ${isPneumonia ? 'text-red-400/80' : 'text-emerald-400/80'}`}>
+                                            {report?.diagnosis?.message}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center justify-center gap-2 mt-4">
                                         <div className={`w-2 h-2 rounded-full ${isPneumonia ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`}></div>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detection Mode: {report?.meta?.model || 'Vision Transformer'}</span>
                                     </div>
@@ -426,6 +549,9 @@ const DashboardPage = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* AI Chat Assistant */}
+            <AIChat report={report} />
         </div>
     );
 };

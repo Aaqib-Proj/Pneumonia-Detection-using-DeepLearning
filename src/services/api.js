@@ -49,3 +49,25 @@ export const deleteReport = async (id) => {
         return false;
     }
 };
+
+export const explainXRay = async (originalBlob, heatmapBlob, label, type, confidence) => {
+    const formData = new FormData();
+    formData.append('image', originalBlob, 'original.png');
+    formData.append('heatmap', heatmapBlob, 'heatmap.png');
+    formData.append('label', label);
+    formData.append('p_type', type);
+    formData.append('confidence', confidence);
+
+    try {
+        const response = await fetch(`${API_URL}/explain`, {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!response.ok) throw new Error("Explanation server error");
+        return await response.json();
+    } catch (error) {
+        console.error("Gemini explain failed", error);
+        throw error;
+    }
+};

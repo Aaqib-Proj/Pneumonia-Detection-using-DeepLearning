@@ -8,3 +8,5 @@ opencv-python-headless
 Pillow
 python-multipart
 sqlalchemy
+groq
+python-dotenv

@@ -93,17 +93,19 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                     <div className="bg-slate-900 rounded-2xl p-6 text-white text-center flex flex-col items-center justify-center">
                         <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Diagnosis</h3>
                         <div className={`text-xl font-black uppercase mb-1 ${isPneumonia ? 'text-red-400' : 'text-emerald-400'}`}>
-                            {report?.diagnosis?.label || '--'}
+                            {report?.diagnosis?.type && report.diagnosis.type !== "None"
+                                ? `${report.diagnosis.type} Pneumonia`
+                                : (report?.diagnosis?.label || '--')}
                         </div>
                         <div className="text-3xl font-black tracking-tighter mb-1">
                             {formatConfidence(report?.diagnosis?.confidence)}
                         </div>
                         <p className="text-[7px] font-bold text-slate-500 uppercase mb-3">AI Confidence</p>
 
-                        <div className="w-full pt-3 border-t border-white/10 mt-1">
-                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pneumonia match</p>
-                            <p className={`text-sm font-black ${isPneumonia ? 'text-red-400' : 'text-emerald-400'}`}>
-                                {report?.diagnosis?.pneumonia_prob || (isPneumonia ? report?.diagnosis?.confidence : "0.0%")}
+                        <div className="w-full pt-3 border-t border-white/10 mt-1 text-center px-4">
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Inference Message</p>
+                            <p className={`text-[9px] font-black leading-tight ${isPneumonia ? 'text-red-400' : 'text-emerald-400'}`}>
+                                {report?.diagnosis?.message || (isPneumonia ? "Pneumonia detected" : "Normal scan")}
                             </p>
                         </div>
                     </div>
@@ -160,16 +162,6 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
 
                 {/* Technical / Clinical */}
                 <div className="grid grid-cols-2 gap-8 mb-10">
-                    <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Medical Interpretation</h4>
-                        <p className="text-sm text-slate-800 leading-relaxed font-medium">
-                            "{report?.clinical?.findings || 'Waiting for diagnostic results...'}"
-                        </p>
-                        <div className="mt-5 pt-4 border-t border-slate-200">
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Risk Assessment: </span>
-                            <span className="text-sm font-black text-slate-900 uppercase">{report?.diagnosis?.severity} Concern</span>
-                        </div>
-                    </div>
                     <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
                         <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4 border-l-4 border-slate-900 pl-3">AI Protocol & Recommendations</h4>
                         <ul className="space-y-4">
@@ -184,6 +176,66 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                         </ul>
                     </div>
                 </div>
+
+                {/* AI Radiographic Analysis (Groq powered) */}
+                {report?.diagnosis?.ai_explanation && (
+                    <div className="mb-10 bg-slate-900 text-white p-8 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                        <h4 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                            <Activity size={14} /> AI Clinical Interpretation (Llama 4 LPU Reasoning)
+                        </h4>
+
+                        {(() => {
+                            try {
+                                const data = typeof report.diagnosis.ai_explanation === 'string'
+                                    ? JSON.parse(report.diagnosis.ai_explanation)
+                                    : report.diagnosis.ai_explanation;
+
+                                return (
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="space-y-3">
+                                                <h5 className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Radiographic Findings</h5>
+                                                {data.radiographic_observations?.map((obs, i) => (
+                                                    <div key={i} className="text-[10px] leading-relaxed text-slate-300 flex gap-2">
+                                                        <span className="text-emerald-500">•</span> {obs}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="space-y-3">
+                                                <h5 className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Neural Context</h5>
+                                                <p className="text-[10px] leading-relaxed text-slate-400 italic">
+                                                    {data.heatmap_correlation}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                                            <h5 className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2">Final Clinical Impression</h5>
+                                            <p className="text-xs font-bold text-white uppercase italic tracking-tight">
+                                                {data.clinical_summary}
+                                            </p>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-2">
+                                            {data.next_steps?.map((step, i) => (
+                                                <span key={i} className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[8px] font-black text-emerald-400 uppercase tracking-widest">
+                                                    {step}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            } catch (e) {
+                                return <p className="text-xs leading-relaxed text-slate-300 whitespace-pre-wrap italic">{report.diagnosis.ai_explanation}</p>;
+                            }
+                        })()}
+                        <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center text-[8px] font-bold text-slate-500 uppercase tracking-widest">
+                            <span>Analysis Engine: Groq Llama 4 Vision</span>
+                            <span>Verification: AI-Verified Radiographic Context</span>
+                        </div>
+                    </div>
+                )}
 
                 {/* Footer Section with Signature & QR */}
                 <div className="flex justify-between items-end border-t border-slate-100 pt-10">

@@ -6,8 +6,12 @@ import uvicorn
 import json
 import base64
 from database import SessionLocal, init_db, ReportDB
+from chat_route import router as chat_router
 
 app = FastAPI()
+
+# Include chat router
+app.include_router(chat_router)
 
 # Init Database
 init_db()
@@ -79,6 +83,60 @@ async def analyze_xray(
         return report
     except Exception as e:
         return {"error": str(e)}
+
+@app.post("/api/explain")
+@app.post("/api/explain")
+async def explain_with_ai(
+    image: UploadFile = File(...),
+    heatmap: UploadFile = File(...),
+    label: str = Form(...),
+    p_type: str = Form(...),
+    confidence: str = Form(...)
+):
+    try:
+        print(f"🔍 Received AI Explanation Request: {label} ({p_type})")
+        from PIL import Image
+        import io
+        
+        # 1. Read files
+        img_bytes = await image.read()
+        hm_bytes = await heatmap.read()
+        
+        if not img_bytes or not hm_bytes:
+            print("   ⚠️ Missing image or heatmap data")
+            return {"error": "Missing image or heatmap data"}
+
+        # 2. Convert to PIL
+        try:
+            original_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+            heatmap_img = Image.open(io.BytesIO(hm_bytes)).convert("RGB")
+        except Exception as img_err:
+            print(f"   ⚠️ Image conversion failed: {img_err}")
+            return {"error": f"Invalid image format: {str(img_err)}"}
+        
+        # 3. Run Groq Engine
+        print("   🤖 Triggering Groq AI LPU Engine...")
+        explanation = backend_engine._generate_groq_analysis(
+            original_img, 
+            heatmap_img, 
+            {
+                "label": label,
+                "type": p_type,
+                "confidence_display": confidence
+            }
+        )
+        
+        if explanation.startswith("Error"):
+            print(f"   ❌ AI Engine returned error: {explanation}")
+            return {"error": explanation}
+
+        print("   ✨ AI Explanation generated successfully")
+        return {"explanation": explanation}
+    except Exception as e:
+        print(f"   🔥 Server Error in /api/explain: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"error": f"Internal Server Error: {str(e)}"}
 
 @app.get("/api/history")
 def get_history(db: Session = Depends(get_db)):
