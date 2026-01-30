@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import FileUpload from '../components/FileUpload';
 import { uploadXRay } from '../services/api';
 import Button from '../components/Button';
@@ -19,6 +20,7 @@ const Zap = ({ size, className }) => (
 );
 
 const UploadPage = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -159,8 +161,8 @@ const UploadPage = () => {
                                 className="space-y-8"
                             >
                                 <div className="text-center mb-8">
-                                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Patient Information</h1>
-                                    <p className="text-slate-500 font-medium">Capture essential demographics for clinical correlation.</p>
+                                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{t('upload.title')}</h1>
+                                    <p className="text-slate-500 font-medium">{t('upload.subtitle')}</p>
                                 </div>
 
                                 <Card className="p-8 border-none shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">

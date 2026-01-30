@@ -5,9 +5,12 @@ import ThemeToggle from './ThemeToggle';
 import Button from './Button';
 import { useAuth } from '../context/AuthContext';
 import { useHeader } from '../context/HeaderContext';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import LanguageSelector from './LanguageSelector';
 
 const Navbar = () => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const { currentUser, logout } = useAuth();
@@ -18,9 +21,9 @@ const Navbar = () => {
     const shouldShowNavLinks = publicPaths.includes(location.pathname);
 
     const navLinks = [
-        { name: 'Home', path: '/' },
-        { name: 'About AI', path: '/about' },
-        { name: 'Legal', path: '/terms' },
+        { name: t('nav.home'), path: '/' },
+        { name: t('nav.about'), path: '/about' },
+        { name: t('nav.legal'), path: '/terms' },
     ];
 
     useEffect(() => {
@@ -107,6 +110,8 @@ const Navbar = () => {
 
                                     </div>
                                 )}
+
+                                <LanguageSelector />
                             </div>
                         </div>
 
@@ -138,7 +143,10 @@ const Navbar = () => {
                                         <Settings size={20} /> System Configuration
                                     </NavLink>
                                     <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-white/5">
-                                        <ThemeToggle />
+                                        <div className="flex items-center gap-4">
+                                            <ThemeToggle />
+                                            <LanguageSelector />
+                                        </div>
                                         {currentUser ? (
                                             <Button onClick={logout} variant="outline" className="px-8 rounded-xl h-12">Log Out</Button>
                                         ) : (

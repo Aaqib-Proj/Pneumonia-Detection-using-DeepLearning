@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     ArrowRight, Activity, Upload, FileText,
     Cpu, Shield, Users, Clock, CheckCircle,
@@ -11,6 +12,7 @@ import Card from '../components/Card';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
 const LandingPage = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { scrollY } = useScroll();
     const y1 = useTransform(scrollY, [0, 500], [0, 200]);
@@ -50,15 +52,14 @@ const LandingPage = () => {
                             </motion.div>
 
                             <h1 className="text-5xl lg:text-7xl font-black mb-8 leading-[1.1] text-slate-900 dark:text-white tracking-tighter">
-                                Next-Gen AI <br />
+                                {t('landing.hero_title_part1')} <br />
                                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 via-teal-500 to-blue-600 group">
-                                    Pneumonia Screening
+                                    {t('landing.hero_title_part2')}
                                 </span>
                             </h1>
 
                             <p className="text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-xl leading-relaxed font-medium">
-                                Empowering clinicians with state-of-the-art Computer Vision.
-                                Detect, localize, and quantify axial opacities in seconds with hospital-grade accuracy.
+                                {t('landing.hero_subtitle')}
                             </p>
 
                             <div className="flex flex-wrap gap-4">
@@ -66,14 +67,14 @@ const LandingPage = () => {
                                     onClick={() => navigate('/upload')}
                                     className="text-lg px-10 py-4 bg-emerald-500 hover:bg-emerald-600 text-white border-none shadow-2xl shadow-emerald-500/40 rounded-2xl group transition-all"
                                 >
-                                    Start Deep Scan
+                                    {t('landing.get_started')}
                                     <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
                                 </Button>
                                 <Button
                                     variant="outline"
                                     className="text-lg px-10 py-4 border-slate-200 dark:border-white/10 dark:text-white rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
                                 >
-                                    Explore Models
+                                    {t('landing.view_demo')}
                                 </Button>
                             </div>
 

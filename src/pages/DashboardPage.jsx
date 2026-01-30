@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useLocation, NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     Download, Share2, FileText, Printer,
     Maximize2, X, Activity, ShieldAlert,
@@ -19,6 +20,7 @@ import { explainXRay } from '../services/api';
 import AIChat from '../components/AIChat';
 
 const DashboardPage = () => {
+    const { t } = useTranslation();
     const reportRef = useRef(null);
     const location = useLocation();
     const [imageSrc, setImageSrc] = useState(null);
@@ -158,18 +160,18 @@ const DashboardPage = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
                         <NavLink to="/upload" className="inline-flex items-center gap-2 text-slate-500 hover:text-emerald-500 mb-2 transition-colors text-sm font-medium">
-                            <ArrowLeft size={16} /> Back to Analysis
+                            <ArrowLeft size={16} /> {t('dashboard.back')}
                         </NavLink>
-                        <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Analysis Results</h1>
+                        <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{t('dashboard.results')}</h1>
                         <p className="text-slate-500 font-mono text-sm uppercase tracking-widest mt-1">Ref: #{report?.meta?.id || '----'}</p>
                     </motion.div>
 
                     <div className="flex gap-3 no-print">
                         <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2 border-slate-200 dark:border-slate-800">
-                            <Printer size={16} /> Print
+                            <Printer size={16} /> {t('dashboard.print')}
                         </Button>
                         <Button size="sm" onClick={handleDownloadPDF} className="gap-2 shadow-lg shadow-emerald-500/20">
-                            <Download size={16} /> Export PDF
+                            <Download size={16} /> {t('dashboard.results')}
                         </Button>
                     </div>
                 </div>
@@ -182,10 +184,10 @@ const DashboardPage = () => {
                     className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
                 >
                     {[
-                        { label: 'Patient', value: report?.meta?.name || patientData?.name || 'Anonymous', icon: User },
-                        { label: 'Age / Sex', value: report?.meta?.age_sex || `${patientData?.age || '--'} / ${patientData?.gender || '--'}`, icon: Activity },
-                        { label: 'Modality', value: report?.meta?.modality || 'CXR Standard', icon: FileText },
-                        { label: 'Study Date', value: report?.meta?.date || new Date().toLocaleDateString(), icon: Calendar }
+                        { label: t('dashboard.patient'), value: report?.meta?.name || patientData?.name || 'Anonymous', icon: User },
+                        { label: t('dashboard.age_sex'), value: report?.meta?.age_sex || `${patientData?.age || '--'} / ${patientData?.gender || '--'}`, icon: Activity },
+                        { label: t('dashboard.modality'), value: report?.meta?.modality || 'CXR Standard', icon: FileText },
+                        { label: t('dashboard.study_date'), value: report?.meta?.date || new Date().toLocaleDateString(), icon: Calendar }
                     ].map((item, idx) => (
                         <Card key={idx} className="p-4 flex items-center gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-slate-100 dark:border-slate-800">
                             <div className={`p-2 rounded-lg bg-slate-100 dark:bg-slate-800 ${item.color || 'text-slate-500'}`}>
@@ -208,9 +210,9 @@ const DashboardPage = () => {
                                 <div className="flex items-center gap-4">
                                     <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
                                         {[
-                                            { id: 'heatmap', label: 'Heatmap', icon: Layers },
-                                            { id: 'original', label: 'X-Ray', icon: Monitor },
-                                            { id: 'side-by-side', label: 'Compare', icon: Layout }
+                                            { id: 'heatmap', label: t('dashboard.heatmap'), icon: Layers },
+                                            { id: 'original', label: t('dashboard.xray'), icon: Monitor },
+                                            { id: 'side-by-side', label: t('dashboard.compare'), icon: Layout }
                                         ].map((mode) => (
                                             <button
                                                 key={mode.id}
@@ -274,7 +276,7 @@ const DashboardPage = () => {
                         <div className="grid md:grid-cols-1 gap-8">
                             <Card className="p-6 border-slate-100 dark:border-slate-800 shadow-sm">
                                 <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                                    <Monitor size={18} className="text-blue-500" /> AI Quantitative Report
+                                    <Monitor size={18} className="text-blue-500" /> {t('dashboard.ai_report')}
                                 </h3>
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800">
@@ -312,7 +314,7 @@ const DashboardPage = () => {
                                 <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
                                     <Activity size={18} />
                                 </div>
-                                Groq AI Medical Analysis (Explainable AI)
+                                {t('dashboard.findings')}
                             </h3>
                             <div className="relative z-10">
                                 <div className="prose prose-slate dark:prose-invert max-w-none">
@@ -426,19 +428,19 @@ const DashboardPage = () => {
                                                 ? `${(report.diagnosis.confidence * 100).toFixed(1)}%`
                                                 : (report?.diagnosis?.confidence || '0.0%')}
                                         </span>
-                                        <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mt-2">AI Confidence</span>
+                                        <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mt-2">{t('report.ai_confidence')}</span>
                                     </div>
                                 </div>
 
                                 <div className="mt-8 grid grid-cols-2 gap-4">
                                     <div className="bg-slate-50 dark:bg-white/5 p-3 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Match Score</div>
+                                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{t('dashboard.match_score')}</div>
                                         <div className={`text-xl font-black ${isPneumonia ? 'text-red-500' : 'text-emerald-500'}`}>
                                             {pneumoniaProb}
                                         </div>
                                     </div>
                                     <div className="bg-slate-50 dark:bg-white/5 p-3 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Severity</div>
+                                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{t('dashboard.severity')}</div>
                                         <div className="text-xl font-black text-slate-900 dark:text-white">
                                             {report?.diagnosis?.severity || 'None'}
                                         </div>
@@ -493,7 +495,7 @@ const DashboardPage = () => {
                             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
                             <div className="relative z-10">
                                 <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-6 flex items-center justify-between">
-                                    Next Protocol
+                                    {t('dashboard.next_protocol')}
                                     <ChevronRight size={16} className="text-emerald-500" />
                                 </h3>
                                 <div className="p-4 bg-white/5 rounded-2xl border border-white/5 mb-8">

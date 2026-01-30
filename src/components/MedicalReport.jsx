@@ -1,7 +1,9 @@
 import React, { forwardRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Stethoscope, ShieldCheck, Activity, MapPin, Phone, Mail, Globe, Clock, CheckCircle2 } from 'lucide-react';
 
 const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) => {
+    const { t } = useTranslation();
     const currentDate = new Date().toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
@@ -51,15 +53,15 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                             <Stethoscope className="text-emerald-500" size={36} />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-black tracking-tighter text-slate-900">PneumaScan <span className="text-emerald-600">AI</span></h1>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">Advanced Medical Imaging Analysis</p>
+                            <h1 className="text-3xl font-black tracking-tighter text-slate-900">{t('report.title').split(' ')[0]} <span className="text-emerald-600">{t('report.title').split(' ').slice(1).join(' ')}</span></h1>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">{t('report.subtitle')}</p>
                         </div>
                     </div>
 
                     <div className="text-right">
-                        <div className="text-[10px] font-black tracking-[0.3em] text-slate-300 uppercase mb-2">Diagnostic Report</div>
+                        <div className="text-[10px] font-black tracking-[0.3em] text-slate-300 uppercase mb-2">{t('report.diagnostic_report')}</div>
                         <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl inline-block">
-                            <p className="text-sm font-bold text-slate-900">ID: {report?.meta?.id || patientInfo.id}</p>
+                            <p className="text-sm font-bold text-slate-900">{t('report.id')}: {report?.meta?.id || patientInfo.id}</p>
                             <p className="text-[10px] font-medium text-slate-400">{report?.meta?.date || currentDate} • {currentTime}</p>
                         </div>
                     </div>
@@ -69,41 +71,41 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                 <div className="grid grid-cols-3 gap-8 mb-10">
                     <div className="col-span-2 bg-slate-50/50 rounded-2xl p-6 border border-slate-100/50">
                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <ShieldCheck size={14} className="text-emerald-500" /> Patient Biography
+                            <ShieldCheck size={14} className="text-emerald-500" /> {t('report.biography')}
                         </h3>
                         <div className="grid grid-cols-2 gap-y-4 gap-x-8">
                             <div className="flex flex-col">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">FullName</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase">{t('report.full_name')}</span>
                                 <span className="text-sm font-black text-slate-800 uppercase">{report?.meta?.name || patientInfo.name}</span>
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">Age / Sex</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase">{t('report.age_sex')}</span>
                                 <span className="text-sm font-black text-slate-800">{report?.meta?.age_sex || `${patientInfo.age} / ${patientInfo.gender}`}</span>
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">Identifier</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase">{t('report.identifier')}</span>
                                 <span className="text-sm font-black text-slate-800">{report?.meta?.id || patientInfo.id}</span>
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">Contact</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase">{t('report.contact')}</span>
                                 <span className="text-sm font-black text-slate-800">{patientInfo.phone || '--'}</span>
                             </div>
                         </div>
                     </div>
                     <div className="bg-slate-900 rounded-2xl p-6 text-white text-center flex flex-col items-center justify-center">
-                        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Diagnosis</h3>
+                        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">{t('report.diagnosis')}</h3>
                         <div className={`text-xl font-black uppercase mb-1 ${isPneumonia ? 'text-red-400' : 'text-emerald-400'}`}>
                             {report?.diagnosis?.type && report.diagnosis.type !== "None"
                                 ? `${report.diagnosis.type} Pneumonia`
-                                : (report?.diagnosis?.label || '--')}
+                                : (report?.diagnosis?.label === "Pneumonia" ? t('nav.history').split(' ')[0] : report?.diagnosis?.label || '--')}
                         </div>
                         <div className="text-3xl font-black tracking-tighter mb-1">
                             {formatConfidence(report?.diagnosis?.confidence)}
                         </div>
-                        <p className="text-[7px] font-bold text-slate-500 uppercase mb-3">AI Confidence</p>
+                        <p className="text-[7px] font-bold text-slate-500 uppercase mb-3">{t('report.ai_confidence')}</p>
 
                         <div className="w-full pt-3 border-t border-white/10 mt-1 text-center px-4">
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Inference Message</p>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('report.inference_message')}</p>
                             <p className={`text-[9px] font-black leading-tight ${isPneumonia ? 'text-red-400' : 'text-emerald-400'}`}>
                                 {report?.diagnosis?.message || (isPneumonia ? "Pneumonia detected" : "Normal scan")}
                             </p>
@@ -122,23 +124,23 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                     <div className="space-y-3">
                         <div className="aspect-[4/3] bg-black rounded-2xl overflow-hidden border-4 border-white shadow-lg shadow-slate-200 relative">
                             <img src={report?.heatmap_base64 || imageSrc} className="w-full h-full object-contain" alt="Inference" />
-                            <div className="absolute top-4 left-4 bg-emerald-600 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-xl">AI-INFERENCE OVERLAY</div>
+                            <div className="absolute top-4 left-4 bg-emerald-600 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-xl">{t('report.inference_overlay')}</div>
                         </div>
-                        <p className="text-[10px] text-center font-bold text-slate-400 uppercase tracking-widest">ViT-GradCAM Classification Attention</p>
+                        <p className="text-[10px] text-center font-bold text-slate-400 uppercase tracking-widest">{t('report.gradcam_attention')}</p>
                     </div>
                 </div>
 
                 {/* Quant Report Table */}
                 <div className="mb-10">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 border-l-4 border-emerald-500 pl-3">Quantitative Lobe Assessment</h3>
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 border-l-4 border-emerald-500 pl-3">{t('report.quant_title')}</h3>
                     <div className="overflow-hidden rounded-2xl border border-slate-100 shadow-sm">
                         <table className="w-full text-left">
                             <thead className="bg-slate-900 text-white">
                                 <tr className="text-[10px] font-black uppercase tracking-widest">
-                                    <th className="p-4">Region</th>
-                                    <th className="p-4 text-center">Opacity (0-5)</th>
-                                    <th className="p-4 text-center text-emerald-400">Infection Prob %</th>
-                                    <th className="p-4 text-center">Volume (ml)</th>
+                                    <th className="p-4">{t('report.region')}</th>
+                                    <th className="p-4 text-center">{t('report.opacity')}</th>
+                                    <th className="p-4 text-center text-emerald-400">{t('report.infection_prob')}</th>
+                                    <th className="p-4 text-center">{t('report.volume')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -146,7 +148,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                                     const r = getRegionData(region);
                                     return (
                                         <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}>
-                                            <td className="p-4 text-xs font-bold text-slate-700">{region}</td>
+                                            <td className="p-4 text-xs font-bold text-slate-700">{t(`report.${region.toLowerCase().replace(' ', '_')}`)}</td>
                                             <td className="p-4 text-xs text-center font-black">
                                                 <span className={r?.opacity_score > 2 ? 'text-red-500' : 'text-slate-900'}>{r?.opacity_score || '0.0'}</span>
                                             </td>
@@ -163,7 +165,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                 {/* Technical / Clinical */}
                 <div className="grid grid-cols-2 gap-8 mb-10">
                     <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                        <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4 border-l-4 border-slate-900 pl-3">AI Protocol & Recommendations</h4>
+                        <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4 border-l-4 border-slate-900 pl-3">{t('report.protocol_title')}</h4>
                         <ul className="space-y-4">
                             <li className="flex gap-3 text-sm font-bold text-slate-800 leading-snug items-start">
                                 <CheckCircle2 size={18} className="shrink-0 text-emerald-600" />
@@ -182,7 +184,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                     <div className="mb-10 bg-slate-900 text-white p-8 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
                         <h4 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                            <Activity size={14} /> AI Clinical Interpretation (Llama 4 LPU Reasoning)
+                            <Activity size={14} /> {t('report.interpretation_title')}
                         </h4>
 
                         {(() => {
@@ -195,7 +197,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-2 gap-6">
                                             <div className="space-y-3">
-                                                <h5 className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Radiographic Findings</h5>
+                                                <h5 className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{t('report.radiographic_findings')}</h5>
                                                 {data.radiographic_observations?.map((obs, i) => (
                                                     <div key={i} className="text-[10px] leading-relaxed text-slate-300 flex gap-2">
                                                         <span className="text-emerald-500">•</span> {obs}
@@ -203,7 +205,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                                                 ))}
                                             </div>
                                             <div className="space-y-3">
-                                                <h5 className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Neural Context</h5>
+                                                <h5 className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{t('report.neural_context')}</h5>
                                                 <p className="text-[10px] leading-relaxed text-slate-400 italic">
                                                     {data.heatmap_correlation}
                                                 </p>
@@ -211,7 +213,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                                         </div>
 
                                         <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                                            <h5 className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2">Final Clinical Impression</h5>
+                                            <h5 className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2">{t('report.final_impression')}</h5>
                                             <p className="text-xs font-bold text-white uppercase italic tracking-tight">
                                                 {data.clinical_summary}
                                             </p>
@@ -231,8 +233,8 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                             }
                         })()}
                         <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center text-[8px] font-bold text-slate-500 uppercase tracking-widest">
-                            <span>Analysis Engine: Groq Llama 4 Vision</span>
-                            <span>Verification: AI-Verified Radiographic Context</span>
+                            <span>{t('report.engine')}</span>
+                            <span>{t('report.verification')}</span>
                         </div>
                     </div>
                 )}
@@ -249,8 +251,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                             </div>
                         </div>
                         <div className="text-[8px] text-slate-300 max-w-[400px]">
-                            DISCLAIMER: This diagnostic assistive tool uses Vision Transformer models to analyze radiographic patterns.
-                            It is intended for preliminary screening and triage. FINAL CLINICAL DIAGNOSIS MUST BE MADE BY A QUALIFIED RADIOLOGIST.
+                            {t('report.disclaimer')}
                         </div>
                     </div>
 
@@ -260,7 +261,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                                 pneumaScan_signed
                             </div>
                             <div className="h-0.5 bg-slate-200 w-48"></div>
-                            <p className="text-[8px] font-black text-slate-300 uppercase mt-1 tracking-[0.2em]">Automated AI Signature</p>
+                            <p className="text-[8px] font-black text-slate-300 uppercase mt-1 tracking-[0.2em]">{t('report.signature')}</p>
                         </div>
                         <div className="flex items-center justify-end gap-2 text-slate-400">
                             <div className="w-12 h-12 bg-slate-50 border border-slate-100 flex items-center justify-center rounded">
