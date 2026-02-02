@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { updateProfile } from 'firebase/auth';
 import { auth } from '../firebase/firebase';
@@ -9,6 +10,7 @@ import { User, LogOut, Mail, Shield, Edit2, Save, X } from 'lucide-react';
 const EMOJI_OPTIONS = ['👨‍⚕️', '👩‍⚕️', '🏥', '🩺', '🧪', '🦠', '🚑', '🧑‍🔬', '🦷', '🧠', '🫁', '🦴'];
 
 const SettingsPage = () => {
+    const { t } = useTranslation();
     const { currentUser, logout } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [displayName, setDisplayName] = useState('');
@@ -34,12 +36,12 @@ const SettingsPage = () => {
                 displayName: displayName,
                 photoURL: selectedEmoji ? `emoji:${selectedEmoji}` : null
             });
-            setMessage({ type: 'success', text: 'Profile updated successfully!' });
+            setMessage({ type: 'success', text: t('settings.profile_updated') });
             setIsEditing(false);
             // Force reload to reflect changes if context doesn't auto-update immediately
             window.location.reload();
         } catch (error) {
-            setMessage({ type: 'error', text: 'Failed to update profile: ' + error.message });
+            setMessage({ type: 'error', text: t('settings.profile_failed') + ' ' + error.message });
         }
         setLoading(false);
     };
@@ -57,7 +59,7 @@ const SettingsPage = () => {
     return (
         <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-900 transition-colors">
             <div className="container mx-auto px-4 max-w-2xl">
-                <h1 className="text-3xl font-bold mb-8">Settings</h1>
+                <h1 className="text-3xl font-bold mb-8">{t('settings.title')}</h1>
 
                 <Card className="space-y-6">
                     <div className="flex flex-col md:flex-row items-center gap-6 pb-6 border-b border-gray-200 dark:border-gray-700">
@@ -75,29 +77,29 @@ const SettingsPage = () => {
                         <div className="flex-1 text-center md:text-left">
                             {!isEditing ? (
                                 <>
-                                    <h2 className="text-2xl font-bold">{currentUser?.displayName || 'User'}</h2>
-                                    <p className="text-gray-500">Standard User Account</p>
+                                    <h2 className="text-2xl font-bold">{currentUser?.displayName || t('settings.profile_user')}</h2>
+                                    <p className="text-gray-500">{t('settings.account_type_standard')}</p>
                                     <button
                                         onClick={() => setIsEditing(true)}
                                         className="mt-2 text-sm text-emerald-600 dark:text-emerald-400 font-medium hover:underline flex items-center gap-1 mx-auto md:mx-0"
                                     >
-                                        <Edit2 size={14} /> Edit Profile
+                                        <Edit2 size={14} /> {t('settings.edit_profile')}
                                     </button>
                                 </>
                             ) : (
                                 <div className="space-y-4 w-full">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display Name</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('settings.display_name')}</label>
                                         <input
                                             type="text"
                                             value={displayName}
                                             onChange={(e) => setDisplayName(e.target.value)}
                                             className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none"
-                                            placeholder="Enter your name"
+                                            placeholder={t('settings.enter_name')}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Avatar</label>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('settings.select_avatar')}</label>
                                         <div className="flex flex-wrap gap-2">
                                             {EMOJI_OPTIONS.map(emoji => (
                                                 <button
@@ -112,10 +114,10 @@ const SettingsPage = () => {
                                     </div>
                                     <div className="flex gap-2 justify-center md:justify-start">
                                         <Button onClick={handleSave} disabled={loading} className="py-2 px-4 shadow-none">
-                                            <Save size={16} /> {loading ? 'Saving...' : 'Save Changes'}
+                                            <Save size={16} /> {loading ? t('settings.saving') : t('settings.save_changes')}
                                         </Button>
                                         <Button variant="outline" onClick={() => { setIsEditing(false); setDisplayName(currentUser?.displayName || ''); }} className="py-2 px-4">
-                                            <X size={16} /> Cancel
+                                            <X size={16} /> {t('settings.cancel')}
                                         </Button>
                                     </div>
                                 </div>
@@ -132,13 +134,13 @@ const SettingsPage = () => {
                     <div className="space-y-4">
                         <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                             <Mail size={20} className="text-gray-400" />
-                            <span className="font-medium">Email:</span>
-                            <span>{currentUser?.email || 'No email detected'}</span>
+                            <span className="font-medium">{t('settings.email_label')}</span>
+                            <span>{currentUser?.email || t('settings.no_email')}</span>
                         </div>
 
                         <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                             <Shield size={20} className="text-gray-400" />
-                            <span className="font-medium">Account Type:</span>
+                            <span className="font-medium">{t('settings.account_type_label')}</span>
                             <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs rounded-full">
                                 Standard User
                             </span>
@@ -152,7 +154,7 @@ const SettingsPage = () => {
                             onClick={logout}
                         >
                             <LogOut size={18} />
-                            Sign Out
+                            {t('settings.sign_out')}
                         </Button>
                     </div>
                 </Card>

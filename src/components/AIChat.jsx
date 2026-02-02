@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, MessageSquare, X, Minimize2 } from 'lucide-react';
 import Button from './Button';
+import { useTranslation } from 'react-i18next';
 
 const AIChat = ({ report }) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
@@ -49,7 +51,7 @@ const AIChat = ({ report }) => {
                 setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.error}` }]);
             }
         } catch (error) {
-            setMessages(prev => [...prev, { role: 'assistant', content: 'Failed to connect to AI. Please try again.' }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: t('chat.error') }]);
         }
 
         setIsLoading(false);
@@ -75,8 +77,8 @@ const AIChat = ({ report }) => {
                                 <MessageSquare size={20} />
                             </div>
                             <div>
-                                <h3 className="font-black text-sm">AI Radiologist Assistant</h3>
-                                <p className="text-[10px] font-bold text-emerald-100">Powered by Groq Llama 4</p>
+                                <h3 className="font-black text-sm">{t('chat.title')}</h3>
+                                <p className="text-[10px] font-bold text-emerald-100">{t('chat.powered_by')}</p>
                             </div>
                         </div>
                         <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-2 rounded-lg transition-colors">
@@ -89,15 +91,15 @@ const AIChat = ({ report }) => {
                         {messages.length === 0 && (
                             <div className="text-center text-slate-400 text-sm py-8">
                                 <MessageSquare size={32} className="mx-auto mb-3 opacity-50" />
-                                <p className="font-bold">Ask me anything about this diagnosis!</p>
-                                <p className="text-xs mt-1">e.g., "What are the treatment options?"</p>
+                                <p className="font-bold">{t('chat.empty_state')}</p>
+                                <p className="text-xs mt-1">{t('chat.example_question')}</p>
                             </div>
                         )}
                         {messages.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[80%] p-3 rounded-2xl ${msg.role === 'user'
-                                        ? 'bg-emerald-500 text-white'
-                                        : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700'
+                                    ? 'bg-emerald-500 text-white'
+                                    : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700'
                                     }`}>
                                     <p className="text-sm leading-relaxed">{msg.content}</p>
                                 </div>
@@ -125,7 +127,7 @@ const AIChat = ({ report }) => {
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                                placeholder="Ask about the diagnosis..."
+                                placeholder={t('chat.placeholder')}
                                 className="flex-1 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                 disabled={isLoading}
                             />

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -12,6 +13,7 @@ import { fetchHistory, deleteReport } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const HistoryPage = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [reports, setReports] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -60,7 +62,7 @@ const HistoryPage = () => {
 
     const handleDelete = async (id, e) => {
         e.stopPropagation();
-        if (window.confirm("Permanent removal from clinical records?")) {
+        if (window.confirm(t('history.delete_confirm'))) {
             const success = await deleteReport(id);
             // Even if backend fails, remove from local state for UX
             setReports(prev => prev.filter(r => r.id !== id));
@@ -89,9 +91,9 @@ const HistoryPage = () => {
                             <div className="p-3 bg-emerald-500 rounded-2xl shadow-xl shadow-emerald-500/20">
                                 <Clock className="text-white" size={32} />
                             </div>
-                            Archive Repository
+                            {t('history.title')}
                         </h1>
-                        <p className="text-slate-500 font-medium mt-2">Manage and review historical patient diagnostic studies.</p>
+                        <p className="text-slate-500 font-medium mt-2">{t('history.subtitle')}</p>
                     </motion.div>
 
                     <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
@@ -99,7 +101,7 @@ const HistoryPage = () => {
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={18} />
                             <input
                                 type="text"
-                                placeholder="Search by name or ID..."
+                                placeholder={t('history.search_placeholder')}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-white dark:bg-slate-900 shadow-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold text-sm"
@@ -111,9 +113,9 @@ const HistoryPage = () => {
                                 onChange={(e) => setFilterCategory(e.target.value)}
                                 className="px-4 py-3.5 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border-none focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-bold transition-all"
                             >
-                                <option value="all">All Diagnoses</option>
-                                <option value="Pneumonia">Pneumonia Only</option>
-                                <option value="Normal">Normal Only</option>
+                                <option value="all">{t('history.all_diagnoses')}</option>
+                                <option value="Pneumonia">{t('history.pneumonia_only')}</option>
+                                <option value="Normal">{t('history.normal_only')}</option>
                             </select>
                             <button
                                 onClick={() => setViewMode(v => v === 'grid' ? 'list' : 'grid')}
@@ -136,10 +138,10 @@ const HistoryPage = () => {
                         <div className="w-24 h-24 bg-slate-200 dark:bg-slate-900 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8">
                             <Search className="text-slate-400" size={40} />
                         </div>
-                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4">No archives found</h3>
-                        <p className="text-slate-500 font-medium mb-10 max-w-sm mx-auto">Either you haven't performed any analyses yet or no records match your current filter.</p>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4">{t('history.no_archives')}</h3>
+                        <p className="text-slate-500 font-medium mb-10 max-w-sm mx-auto">{t('history.no_archives_desc')}</p>
                         <Button onClick={() => navigate('/upload')} className="px-10 py-4 rounded-2xl shadow-2xl shadow-emerald-500/20">
-                            Start First Analysis
+                            {t('history.start_analysis')}
                         </Button>
                     </motion.div>
                 ) : (
@@ -177,14 +179,14 @@ const HistoryPage = () => {
                                                 <p className="text-[10px] font-bold text-slate-400 font-mono tracking-widest mt-1">REF: {item.id}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Inferred</p>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{t('history.inferred')}</p>
                                                 <p className="text-xs font-black text-slate-900 dark:text-white italic">{new Date(item.timestamp).toLocaleDateString()}</p>
                                             </div>
                                         </div>
 
                                         <div className="flex items-center gap-4 mt-6">
                                             <div className="bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                                                <span className="text-[9px] font-black text-slate-400 uppercase block tracking-tighter">Certainty</span>
+                                                <span className="text-[9px] font-black text-slate-400 uppercase block tracking-tighter">{t('history.certainty')}</span>
                                                 <span className="text-xs font-black text-emerald-500">{item.confidence}</span>
                                             </div>
                                             <div className="flex-1"></div>

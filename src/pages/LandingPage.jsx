@@ -18,10 +18,10 @@ const LandingPage = () => {
     const y1 = useTransform(scrollY, [0, 500], [0, 200]);
 
     const features = [
-        { icon: Zap, title: 'Instant Analysis', desc: 'Get results in under 2 seconds with our optimized inference engine.', color: 'text-amber-500', bg: 'bg-amber-500/10' },
-        { icon: Shield, title: 'Enterprise Security', desc: 'HIPAA-compliant data encryption and secure local processing.', color: 'text-blue-500', bg: 'bg-blue-500/10' },
-        { icon: Brain, title: 'Deep Vision AI', desc: 'Vision Transformer (ViT) architecture trained on 100k+ clinical images.', color: 'text-purple-500', bg: 'bg-purple-500/10' },
-        { icon: Layout, title: 'Smart Reporting', desc: 'Automatic generation of high-fidelity PDF medical reports.', color: 'text-emerald-500', bg: 'bg-emerald-500/10' }
+        { icon: Zap, title: t('landing.feature_instant_title'), desc: t('landing.feature_instant_desc'), color: 'text-amber-500', bg: 'bg-amber-500/10' },
+        { icon: Shield, title: t('landing.feature_security_title'), desc: t('landing.feature_security_desc'), color: 'text-blue-500', bg: 'bg-blue-500/10' },
+        { icon: Brain, title: t('landing.feature_brain_title'), desc: t('landing.feature_brain_desc'), color: 'text-purple-500', bg: 'bg-purple-500/10' },
+        { icon: Layout, title: t('landing.feature_report_title'), desc: t('landing.feature_report_desc'), color: 'text-emerald-500', bg: 'bg-emerald-500/10' }
     ];
 
     return (
@@ -48,7 +48,7 @@ const LandingPage = () => {
                                 className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/5 dark:bg-white/5 border border-slate-900/10 dark:border-white/10 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-widest mb-8"
                             >
                                 <Sparkles size={14} />
-                                <span>v2.4 Production Ready</span>
+                                <span>{t('landing.prod_ready')}</span>
                             </motion.div>
 
                             <h1 className="text-5xl lg:text-7xl font-black mb-8 leading-[1.1] text-slate-900 dark:text-white tracking-tighter">
@@ -80,9 +80,9 @@ const LandingPage = () => {
 
                             <div className="mt-16 grid grid-cols-3 gap-8 border-t border-slate-200 dark:border-white/5 pt-10">
                                 {[
-                                    { label: 'Accuracy', val: '99.2%' },
-                                    { label: 'Latency', val: '<250ms' },
-                                    { label: 'Dataset', val: '120k+' }
+                                    { label: t('landing.stat_accuracy'), val: '99.2%' },
+                                    { label: t('landing.stat_latency'), val: '<250ms' },
+                                    { label: t('landing.stat_dataset'), val: '120k+' }
                                 ].map((stat, i) => (
                                     <div key={i}>
                                         <div className="text-2xl font-black text-slate-900 dark:text-white">{stat.val}</div>
@@ -115,8 +115,8 @@ const LandingPage = () => {
                                         <Activity size={24} />
                                     </div>
                                     <div>
-                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Confidence</div>
-                                        <div className="text-lg font-black text-slate-900 dark:text-white">98.5% Predicted</div>
+                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('landing.badge_confidence')}</div>
+                                        <div className="text-lg font-black text-slate-900 dark:text-white">98.5% {t('landing.badge_predicted')}</div>
                                     </div>
                                 </motion.div>
 
@@ -129,7 +129,7 @@ const LandingPage = () => {
                                         <Cpu size={24} />
                                     </div>
                                     <div>
-                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Model</div>
+                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('landing.badge_model')}</div>
                                         <div className="text-lg font-black text-slate-900 dark:text-white">ViT-Transformer</div>
                                     </div>
                                 </motion.div>
@@ -173,28 +173,27 @@ const LandingPage = () => {
             <section id="how-it-works" className="py-24 bg-white dark:bg-slate-950">
                 <div className="container mx-auto px-4">
                     <div className="text-center mb-20 max-w-3xl mx-auto">
-                        <h2 className="text-4xl font-black mb-6 text-slate-900 dark:text-white tracking-tight">Advanced Visual Interpretation</h2>
+                        <h2 className="text-4xl font-black mb-6 text-slate-900 dark:text-white tracking-tight">{t('landing.visual_ai_title')}</h2>
                         <p className="text-lg text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                            Our proprietary ViTGrad-CAM algorithm highlights pathological patterns,
-                            giving clinicians visual evidence for every prediction.
+                            {t('landing.visual_ai_desc')}
                         </p>
                     </div>
 
                     <div className="grid lg:grid-cols-3 gap-12">
                         {[
-                            { step: '01', title: 'Data Upload', desc: 'Securely upload DICOM or raw X-ray scans into our cloud-agnostic platform.' },
-                            { step: '02', title: 'Pattern Recognition', desc: 'AI analyzes pixel data for opacities, pleural effusions, and infiltrates.' },
-                            { step: '03', title: 'Clinical Validation', desc: 'Generated report with heatmap localization and quantitative lobe scoring.' }
+                            { step: '01', title: t('landing.step_upload_title'), desc: t('landing.step_upload_desc') },
+                            { step: '02', title: t('landing.step_pattern_title'), desc: t('landing.step_pattern_desc') },
+                            { step: '03', title: t('landing.step_valid_title'), desc: t('landing.step_valid_desc') }
                         ].map((s, i) => (
                             <div key={i} className="group cursor-default">
                                 <div className="text-6xl font-black text-slate-900/5 dark:text-white/5 group-hover:text-emerald-500/10 transition-colors mb-[-30px] ml-[-10px] select-none uppercase italic">
-                                    Step {s.step}
+                                    {t('landing.step_prefix')} {s.step}
                                 </div>
                                 <Card className="p-10 border-slate-100 dark:border-white/5 shadow-sm hover:shadow-2xl transition-all h-full bg-slate-50/50 dark:bg-white/5 backdrop-blur-sm">
                                     <h3 className="text-xl font-black mb-4 text-slate-900 dark:text-white">{s.title}</h3>
                                     <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium">{s.desc}</p>
                                     <div className="mt-8 flex items-center gap-2 text-emerald-500 font-black text-xs uppercase tracking-widest">
-                                        Learn Process <ArrowRight size={14} />
+                                        {t('landing.learn_process')} <ArrowRight size={14} />
                                     </div>
                                 </Card>
                             </div>
@@ -212,17 +211,17 @@ const LandingPage = () => {
                             <div>
                                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-widest mb-6 border border-blue-500/20">
                                     <Database size={14} />
-                                    <span>Dataset v2.0-Alpha</span>
+                                    <span>{t('landing.dataset_alpha')}</span>
                                 </div>
-                                <h3 className="text-4xl font-black text-white mb-6 tracking-tight">Global Healthcare Integration</h3>
+                                <h3 className="text-4xl font-black text-white mb-6 tracking-tight">{t('landing.integration_title')}</h3>
                                 <p className="text-lg text-slate-400 mb-10 leading-relaxed font-medium">
-                                    PneumaScan is built to integrate seamlessly with existing PACS and Hospital Information Systems (HIS) using HL7 and FHIR standards.
+                                    {t('landing.integration_subtitle')}
                                 </p>
                                 <div className="space-y-6">
                                     {[
-                                        { title: 'Cross-platform Support', desc: 'Works on iOS, Android, and Web browsers.' },
-                                        { title: 'DICOM Standardization', desc: 'Converts raw sensor data into standardized medical imaging.' },
-                                        { title: 'API-First Architecture', desc: 'Easily extend analysis to other clinical apps.' }
+                                        { title: t('landing.integration_cross_title'), desc: t('landing.integration_cross_desc') },
+                                        { title: t('landing.integration_dicom_title'), desc: t('landing.integration_dicom_desc') },
+                                        { title: t('landing.integration_api_title'), desc: t('landing.integration_api_desc') }
                                     ].map((item, i) => (
                                         <div key={i} className="flex gap-4">
                                             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 shrink-0"></div>
@@ -246,8 +245,8 @@ const LandingPage = () => {
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
                                     <div className="absolute bottom-8 left-8 right-8">
-                                        <div className="text-[10px] font-black font-mono text-emerald-500 mb-2 uppercase tracking-widest bg-emerald-500/10 inline-block px-2 py-1 rounded-md">LIVE_INFERENCE_ENGINE</div>
-                                        <h4 className="text-white font-black text-2xl tracking-tighter">Pneuma v2.4 Architecture</h4>
+                                        <div className="text-[10px] font-black font-mono text-emerald-500 mb-2 uppercase tracking-widest bg-emerald-500/10 inline-block px-2 py-1 rounded-md">{t('landing.engine_status')}</div>
+                                        <h4 className="text-white font-black text-2xl tracking-tighter">{t('landing.architecture_title')}</h4>
                                         <div className="mt-4 flex gap-2">
                                             <div className="h-1 bg-emerald-500 rounded-full w-12"></div>
                                             <div className="h-1 bg-slate-700 rounded-full w-4"></div>
@@ -265,14 +264,14 @@ const LandingPage = () => {
             <section className="py-24 bg-white dark:bg-slate-950">
                 <div className="container mx-auto px-4">
                     <div className="text-center mb-20">
-                        <h2 className="text-4xl font-black mb-4 text-slate-900 dark:text-white tracking-tight">Trusted by Medical Professionals</h2>
-                        <p className="text-lg text-slate-500 font-medium">Validation from world-class diagnostic centers</p>
+                        <h2 className="text-4xl font-black mb-4 text-slate-900 dark:text-white tracking-tight">{t('landing.trusted_title')}</h2>
+                        <p className="text-lg text-slate-500 font-medium">{t('landing.trusted_subtitle')}</p>
                     </div>
                     <div className="grid md:grid-cols-3 gap-8">
                         {[
-                            { quote: "The accuracy of PneumaScan's heatmap is unparalleled. It provides a real confidence boost during high-volume screening.", author: "Dr. Sarah Chen", role: "MD, Radiology" },
-                            { quote: "Seamless patient data integration. We've reduced our diagnostic turnaround time by 40% using this AI system.", author: "James Wilson", role: "Clinic Director" },
-                            { quote: "A must-have tool for modern clinical practices. The professional PDF reports are excellent for patient communication.", author: "Dr. Marc Evans", role: "Chest Specialist" }
+                            { quote: t('landing.testimonial_1_quote'), author: t('landing.testimonial_1_author'), role: t('landing.testimonial_1_role') },
+                            { quote: t('landing.testimonial_2_quote'), author: t('landing.testimonial_2_author'), role: t('landing.testimonial_2_role') },
+                            { quote: t('landing.testimonial_3_quote'), author: t('landing.testimonial_3_author'), role: t('landing.testimonial_3_role') }
                         ].map((t, i) => (
                             <Card key={i} className="p-10 border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-center group translate-y-0 hover:-translate-y-2">
                                 <Quote className="text-emerald-500 mb-8 mx-auto opacity-40 group-hover:opacity-100 transition-opacity" size={40} />
@@ -296,16 +295,15 @@ const LandingPage = () => {
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
                     >
-                        <h2 className="text-5xl lg:text-7xl font-black text-white mb-8 tracking-tighter">Ready to evolve <br /> your diagnostic triage?</h2>
+                        <h2 className="text-5xl lg:text-7xl font-black text-white mb-8 tracking-tighter">{t('landing.final_cta_title')}</h2>
                         <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto font-medium">
-                            Join 5,000+ medical facilities worldwide already using PneumaScan AI
-                            to improve patient outcomes and diagnostic accuracy.
+                            {t('landing.final_cta_subtitle')}
                         </p>
                         <Button
                             onClick={() => navigate('/upload')}
                             className="text-xl px-12 py-5 bg-white text-slate-900 hover:bg-emerald-50 font-black rounded-2xl shadow-3xl shadow-emerald-500/20 group"
                         >
-                            Get Started Now
+                            {t('landing.final_cta_button')}
                             <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
                         </Button>
                     </motion.div>
@@ -321,13 +319,13 @@ const LandingPage = () => {
                             <span className="text-xl font-black text-white tracking-tighter">PneumaScan</span>
                         </div>
                         <div className="flex gap-10 text-[10px] font-black uppercase tracking-widest">
-                            <a href="#" className="hover:text-emerald-500 transition-colors">Privacy</a>
-                            <a href="#" className="hover:text-emerald-500 transition-colors">Terms</a>
-                            <a href="#" className="hover:text-emerald-500 transition-colors">Documentation</a>
-                            <a href="#" className="hover:text-emerald-500 transition-colors">Support</a>
+                            <a href="#" className="hover:text-emerald-500 transition-colors">{t('footer.privacy')}</a>
+                            <a href="#" className="hover:text-emerald-500 transition-colors">{t('footer.terms')}</a>
+                            <a href="#" className="hover:text-emerald-500 transition-colors">{t('footer.docs')}</a>
+                            <a href="#" className="hover:text-emerald-500 transition-colors">{t('footer.support')}</a>
                         </div>
                         <div className="text-[10px] font-black uppercase tracking-widest">
-                            © 2026 Deepminds Healthcare
+                            {t('footer.copyright')}
                         </div>
                     </div>
                 </div>

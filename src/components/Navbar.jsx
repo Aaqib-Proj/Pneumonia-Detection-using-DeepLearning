@@ -93,7 +93,7 @@ const Navbar = () => {
 
                                 {!currentUser ? (
                                     <NavLink to="/signup">
-                                        <Button className="rounded-xl h-11 px-8 shadow-xl shadow-emerald-500/20">Sign Up</Button>
+                                        <Button className="rounded-xl h-11 px-8 shadow-xl shadow-emerald-500/20">{t('nav.signup')}</Button>
                                     </NavLink>
                                 ) : (
                                     <div className="flex items-center gap-3">
@@ -137,10 +137,10 @@ const Navbar = () => {
                                 ))}
                                 <div className="flex flex-col gap-4 mt-4">
                                     <NavLink to="/history" onClick={() => setIsOpen(false)} className="flex items-center gap-4 text-sm font-black p-4 bg-slate-50 dark:bg-white/5 rounded-2xl text-slate-700 dark:text-slate-300">
-                                        <History size={20} /> Diagnostic Archives
+                                        <History size={20} /> {t('nav.archives')}
                                     </NavLink>
                                     <NavLink to="/settings" onClick={() => setIsOpen(false)} className="flex items-center gap-4 text-sm font-black p-4 bg-slate-50 dark:bg-white/5 rounded-2xl text-slate-700 dark:text-slate-300">
-                                        <Settings size={20} /> System Configuration
+                                        <Settings size={20} /> {t('nav.sys_config')}
                                     </NavLink>
                                     <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-white/5">
                                         <div className="flex items-center gap-4">
@@ -148,9 +148,9 @@ const Navbar = () => {
                                             <LanguageSelector />
                                         </div>
                                         {currentUser ? (
-                                            <Button onClick={logout} variant="outline" className="px-8 rounded-xl h-12">Log Out</Button>
+                                            <Button onClick={logout} variant="outline" className="px-8 rounded-xl h-12">{t('nav.logout')}</Button>
                                         ) : (
-                                            <NavLink to="/signup" onClick={() => setIsOpen(false)}><Button className="px-10 rounded-xl h-12">Sign Up</Button></NavLink>
+                                            <NavLink to="/signup" onClick={() => setIsOpen(false)}><Button className="px-10 rounded-xl h-12">{t('nav.signup')}</Button></NavLink>
                                         )}
                                     </div>
                                 </div>

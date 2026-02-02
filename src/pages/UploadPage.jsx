@@ -66,8 +66,8 @@ const UploadPage = () => {
 
     const handleAnalyze = async (e) => {
         e.preventDefault();
-        if (!file) { alert("Please upload an X-Ray image."); return; }
-        if (!formData.name || !formData.age) { alert("Please complete patient details."); return; }
+        if (!file) { alert(t('upload.alert_no_file')); return; }
+        if (!formData.name || !formData.age) { alert(t('upload.alert_incomplete')); return; }
 
         setAnalyzing(true);
         setStage(1);
@@ -115,16 +115,16 @@ const UploadPage = () => {
 
         } catch (error) {
             console.error(error);
-            alert("Analysis failed.");
+            alert(t('upload.alert_failed'));
             setAnalyzing(false);
             setStage(0);
         }
     };
 
     const steps = [
-        { id: 1, label: 'Demographics', icon: User },
-        { id: 2, label: 'Clinical Info', icon: FileText },
-        { id: 3, label: 'Imaging', icon: UploadCloud },
+        { id: 1, label: t('upload.demographics'), icon: User },
+        { id: 2, label: t('upload.clinical_info'), icon: FileText },
+        { id: 3, label: t('upload.imaging'), icon: UploadCloud },
     ];
 
     return (
@@ -168,37 +168,37 @@ const UploadPage = () => {
                                 <Card className="p-8 border-none shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
                                     <div className="grid md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name</label>
-                                            <input type="text" name="name" required value={formData.name} onChange={handleInputChange} placeholder="John Doe" className="input-field" />
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('upload.full_name')}</label>
+                                            <input type="text" name="name" required value={formData.name} onChange={handleInputChange} placeholder={t('upload.placeholder_name')} className="input-field" />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date of Birth</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('upload.dob')}</label>
                                             <input type="date" name="dob" value={formData.dob} onChange={handleInputChange} className="input-field dark:[color-scheme:dark]" />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Age</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('upload.age')}</label>
                                             <input type="number" name="age" required value={formData.age} onChange={handleInputChange} className="input-field" />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Gender</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('upload.gender')}</label>
                                             <select name="gender" required value={formData.gender} onChange={handleInputChange} className="input-field">
-                                                <option value="male">Male</option>
-                                                <option value="female">Female</option>
-                                                <option value="other">Other</option>
+                                                <option value="male">{t('upload.male')}</option>
+                                                <option value="female">{t('upload.female')}</option>
+                                                <option value="other">{t('upload.other')}</option>
                                             </select>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Weight (kg)</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('upload.weight')}</label>
                                             <input type="text" name="weight" value={formData.weight} onChange={handleInputChange} className="input-field" />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('upload.phone')}</label>
                                             <input type="tel" name="phone" required value={formData.phone} onChange={handleInputChange} className="input-field" />
                                         </div>
                                     </div>
                                     <div className="mt-8 flex justify-end">
                                         <Button onClick={() => setActiveStep(2)} type="button" className="px-8 py-3 rounded-xl gap-2">
-                                            Continue <ArrowRight size={18} />
+                                            {t('upload.continue')} <ArrowRight size={18} />
                                         </Button>
                                     </div>
                                 </Card>
@@ -212,18 +212,18 @@ const UploadPage = () => {
                                 className="space-y-8"
                             >
                                 <div className="text-center mb-8">
-                                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Clinical History</h1>
-                                    <p className="text-slate-500 font-medium">Add symptoms and prior history for AI context.</p>
+                                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{t('upload.clinical_history')}</h1>
+                                    <p className="text-slate-500 font-medium">{t('upload.clinical_subtitle')}</p>
                                 </div>
 
                                 <Card className="p-8 border-none shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
                                     <div className="space-y-6">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Reason for Examination</label>
-                                            <textarea name="clinicalNotes" rows="4" value={formData.clinicalNotes} onChange={handleInputChange} className="input-field resize-none h-32" placeholder="e.g. Persistent cough for 3 weeks..."></textarea>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('upload.reason')}</label>
+                                            <textarea name="clinicalNotes" rows="4" value={formData.clinicalNotes} onChange={handleInputChange} className="input-field resize-none h-32" placeholder={t('upload.placeholder_notes')}></textarea>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
-                                            {['Cough', 'Fever', 'Dyspnea', 'Chest Pain'].map(symp => (
+                                            {[t('upload.cough'), t('upload.fever'), t('upload.dyspnea'), t('upload.chest_pain')].map(symp => (
                                                 <label key={symp} className="flex items-center gap-3 p-4 rounded-xl border border-slate-100 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                                     <input type="checkbox" className="w-5 h-5 accent-emerald-500" />
                                                     <span className="text-sm font-bold">{symp}</span>
@@ -232,9 +232,9 @@ const UploadPage = () => {
                                         </div>
                                     </div>
                                     <div className="mt-8 flex justify-between">
-                                        <Button onClick={() => setActiveStep(1)} type="button" variant="ghost" className="px-8 py-3">Back</Button>
+                                        <Button onClick={() => setActiveStep(1)} type="button" variant="ghost" className="px-8 py-3">{t('upload.back')}</Button>
                                         <Button onClick={() => setActiveStep(3)} type="button" className="px-8 py-3 rounded-xl gap-2">
-                                            Continue <ArrowRight size={18} />
+                                            {t('upload.continue')} <ArrowRight size={18} />
                                         </Button>
                                     </div>
                                 </Card>
@@ -248,16 +248,16 @@ const UploadPage = () => {
                                 className="space-y-8"
                             >
                                 <div className="text-center mb-8">
-                                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Upload Scanning</h1>
-                                    <p className="text-slate-500 font-medium">Submit high-resolution radiographic data.</p>
+                                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{t('upload.upload_scanning')}</h1>
+                                    <p className="text-slate-500 font-medium">{t('upload.upload_subtitle')}</p>
                                 </div>
 
                                 <Card className="p-8 border-none shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
                                     <div className="space-y-8">
                                         <div className="flex items-center justify-center">
                                             <div className="flex bg-slate-100 dark:bg-slate-900/80 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">
-                                                <button type="button" onClick={() => setFormData(p => ({ ...p, patientType: 'adult' }))} className={`px-10 py-3 rounded-xl text-sm font-black transition-all ${formData.patientType === 'adult' ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-900'}`}>ADULT</button>
-                                                <button type="button" onClick={() => setFormData(p => ({ ...p, patientType: 'pediatric' }))} className={`px-10 py-3 rounded-xl text-sm font-black transition-all ${formData.patientType === 'pediatric' ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-900'}`}>PEDIATRIC</button>
+                                                <button type="button" onClick={() => setFormData(p => ({ ...p, patientType: 'adult' }))} className={`px-10 py-3 rounded-xl text-sm font-black transition-all ${formData.patientType === 'adult' ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-900'}`}>{t('upload.adult')}</button>
+                                                <button type="button" onClick={() => setFormData(p => ({ ...p, patientType: 'pediatric' }))} className={`px-10 py-3 rounded-xl text-sm font-black transition-all ${formData.patientType === 'pediatric' ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-900'}`}>{t('upload.pediatric')}</button>
                                             </div>
                                         </div>
 
@@ -283,18 +283,18 @@ const UploadPage = () => {
 
                                     {!analyzing ? (
                                         <div className="mt-12 flex justify-between items-center">
-                                            <Button onClick={() => setActiveStep(2)} type="button" variant="ghost" className="px-8 py-3">Back</Button>
+                                            <Button onClick={() => setActiveStep(2)} type="button" variant="ghost" className="px-8 py-3">{t('upload.back')}</Button>
                                             <Button type="submit" disabled={!file} className="px-12 py-4 rounded-2xl gap-2 text-lg font-black shadow-2xl shadow-emerald-500/30 disabled:opacity-30 transition-all">
-                                                Run Deep Analysis <Zap size={20} className="fill-current" />
+                                                {t('upload.run_analysis')} <Zap size={20} className="fill-current" />
                                             </Button>
                                         </div>
                                     ) : (
                                         <div className="mt-12 p-10 bg-slate-900 rounded-[2.5rem] text-center border border-white/5 shadow-3xl">
                                             <div className="mb-8">
-                                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">Processing Inference Engine</div>
+                                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">{t('upload.processing')}</div>
                                                 <div className="flex justify-between items-end mb-4 px-2">
                                                     <span className="text-2xl font-black text-white">{Math.round(progress)}%</span>
-                                                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{stage === 1 ? 'Uploading Study' : (stage === 2 ? 'Neural Processing' : 'Building Report')}</span>
+                                                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{stage === 1 ? t('upload.uploading') : (stage === 2 ? t('upload.neural_processing') : t('upload.building_report'))}</span>
                                                 </div>
                                                 <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
                                                     <motion.div
@@ -306,7 +306,7 @@ const UploadPage = () => {
                                             </div>
                                             <div className="flex items-center justify-center gap-4 text-emerald-500/80">
                                                 <Loader2 className="animate-spin" size={24} />
-                                                <span className="text-sm font-black uppercase tracking-widest">Optimizing Voxels...</span>
+                                                <span className="text-sm font-black uppercase tracking-widest">{t('upload.optimizing')}</span>
                                             </div>
                                         </div>
                                     )}
@@ -318,10 +318,10 @@ const UploadPage = () => {
 
                 <div className="mt-12 flex flex-col md:flex-row gap-8 items-center justify-center opacity-40 grayscale pointer-events-none">
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
-                        <ShieldCheck size={16} /> HIPAA Secure
+                        <ShieldCheck size={16} /> {t('upload.hipaa')}
                     </div>
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
-                        <Activity size={16} /> Edge Processing
+                        <Activity size={16} /> {t('upload.edge_processing')}
                     </div>
                 </div>
             </div>

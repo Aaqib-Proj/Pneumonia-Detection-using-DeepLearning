@@ -16,7 +16,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
     });
 
     const patientInfo = {
-        name: patientData?.name || 'Anonymous Patient',
+        name: patientData?.name || t('report.anon_patient'),
         age: patientData?.age || '--',
         gender: patientData?.gender || '--',
         weight: patientData?.weight || '--',
@@ -107,7 +107,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                         <div className="w-full pt-3 border-t border-white/10 mt-1 text-center px-4">
                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('report.inference_message')}</p>
                             <p className={`text-[9px] font-black leading-tight ${isPneumonia ? 'text-red-400' : 'text-emerald-400'}`}>
-                                {report?.diagnosis?.message || (isPneumonia ? "Pneumonia detected" : "Normal scan")}
+                                {report?.diagnosis?.message || (isPneumonia ? t('report.pneumonia_detected') : t('report.normal_scan'))}
                             </p>
                         </div>
                     </div>
@@ -119,7 +119,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                         <div className="aspect-[4/3] bg-black rounded-2xl overflow-hidden border-4 border-white shadow-lg shadow-slate-200">
                             <img src={imageSrc} className="w-full h-full object-contain" alt="Original" />
                         </div>
-                        <p className="text-[10px] text-center font-bold text-slate-400 uppercase tracking-widest">{report?.meta?.modality || 'Digital Radiograph (PA View)'}</p>
+                        <p className="text-[10px] text-center font-bold text-slate-400 uppercase tracking-widest">{report?.meta?.modality || t('report.modality')}</p>
                     </div>
                     <div className="space-y-3">
                         <div className="aspect-[4/3] bg-black rounded-2xl overflow-hidden border-4 border-white shadow-lg shadow-slate-200 relative">
@@ -173,7 +173,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                             </li>
                             <li className="flex gap-3 text-sm font-bold text-slate-600 leading-snug items-start">
                                 <CheckCircle2 size={18} className="shrink-0 text-slate-300" />
-                                Professional Pulmonology consultation for clinical correlation.
+                                {t('report.recommendation_2')}
                             </li>
                         </ul>
                     </div>
@@ -244,10 +244,10 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                     <div className="space-y-4">
                         <div className="flex gap-6 grayscale opacity-30 h-6">
                             <div className="flex items-center gap-1 text-[8px] font-black tracking-tighter">
-                                <ShieldCheck size={10} /> HIPAA COMPLIANT
+                                <ShieldCheck size={10} /> {t('report.hipaa_compliant')}
                             </div>
                             <div className="flex items-center gap-1 text-[8px] font-black tracking-tighter">
-                                <Activity size={10} /> HL7/DICOM READY
+                                <Activity size={10} /> {t('report.hl7_dicom')}
                             </div>
                         </div>
                         <div className="text-[8px] text-slate-300 max-w-[400px]">

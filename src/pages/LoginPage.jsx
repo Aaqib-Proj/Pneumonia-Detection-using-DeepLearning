@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Card from '../components/Card';
@@ -6,6 +7,7 @@ import Button from '../components/Button';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
 
 const LoginPage = () => {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -22,7 +24,7 @@ const LoginPage = () => {
             await login(email, password);
             navigate('/upload');
         } catch (err) {
-            setError('Failed to log in. ' + err.message);
+            setError(t('auth.login_failed') + ' ' + err.message);
         }
         setLoading(false);
     };
@@ -32,8 +34,8 @@ const LoginPage = () => {
             <div className="container mx-auto px-4 max-w-md">
                 <Card>
                     <div className="text-center mb-8">
-                        <h2 className="text-2xl font-bold mb-2">Welcome Back</h2>
-                        <p className="text-gray-500 text-sm">Log in to your PneumaScan account.</p>
+                        <h2 className="text-2xl font-bold mb-2">{t('auth.login_title')}</h2>
+                        <p className="text-gray-500 text-sm">{t('auth.login_subtitle')}</p>
                     </div>
 
                     {error && (
@@ -45,7 +47,7 @@ const LoginPage = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium ml-1">Email</label>
+                            <label className="text-sm font-medium ml-1">{t('auth.email')}</label>
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                                 <input
@@ -60,7 +62,7 @@ const LoginPage = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium ml-1">Password</label>
+                            <label className="text-sm font-medium ml-1">{t('auth.password')}</label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                                 <input
@@ -75,12 +77,12 @@ const LoginPage = () => {
                         </div>
 
                         <Button disabled={loading} className="w-full mt-6">
-                            {loading ? 'Logging In...' : 'Log In'}
+                            {loading ? t('auth.logging_in') : t('auth.login')}
                         </Button>
                     </form>
 
                     <div className="mt-6 text-center text-sm text-gray-500">
-                        Don't have an account? <Link to="/signup" className="text-emerald-500 hover:underline">Sign Up</Link>
+                        {t('auth.no_account')} <Link to="/signup" className="text-emerald-500 hover:underline">{t('auth.signup')}</Link>
                     </div>
                 </Card>
             </div>

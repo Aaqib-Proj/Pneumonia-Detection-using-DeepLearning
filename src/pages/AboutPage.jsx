@@ -1,34 +1,36 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Card from '../components/Card';
 
 const AboutPage = () => {
+    const { t } = useTranslation();
     return (
         <div className="min-h-screen pt-24 pb-12">
             <div className="container mx-auto px-4">
-                <h1 className="text-4xl font-bold mb-8 text-center"><span className="text-gradient">About Us</span></h1>
+                <h1 className="text-4xl font-bold mb-8 text-center"><span className="text-gradient">{t('about.title')}</span></h1>
 
                 <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
                     <div className="space-y-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md p-8 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
                         <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed">
-                            PneumaScan is a pioneering medical technology company dedicated to revolutionizing respiratory diagnostics through the power of Artificial Intelligence.
+                            {t('about.mission_1')}
                         </p>
                         <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed">
-                            Our mission is to support radiologists and healthcare providers with rapid, accurate, and explainable AI tools that detect early signs of pneumonia, ultimately saving lives through faster intervention.
+                            {t('about.mission_2')}
                         </p>
                     </div>
                     <Card className="p-8 bg-gradient-to-br from-teal-500/10 to-sky-500/10 border border-white/20 backdrop-blur-md">
-                        <h3 className="text-2xl font-semibold mb-4 text-emerald-500">Our Vision</h3>
+                        <h3 className="text-2xl font-semibold mb-4 text-emerald-500">{t('about.vision_title')}</h3>
                         <p className="text-gray-500 dark:text-gray-400">
-                            To make advanced diagnostic capabilities accessible to every healthcare facility worldwide, ensuring that no case of pneumonia goes undetected.
+                            {t('about.vision_desc')}
                         </p>
                     </Card>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-8 text-center">
                     {[
-                        { number: '10k+', label: 'Scans Analyzed' },
-                        { number: '98.5%', label: 'Accuracy Rate' },
-                        { number: '24/7', label: 'Availability' },
+                        { number: '10k+', label: t('about.stat_scans') },
+                        { number: '98.5%', label: t('about.stat_accuracy') },
+                        { number: '24/7', label: t('about.stat_availability') },
                     ].map((stat, i) => (
                         <div key={i} className="p-6 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm rounded-xl border border-slate-200/30 dark:border-slate-700/30">
                             <div className="text-4xl font-bold text-teal-500 mb-2">{stat.number}</div>
@@ -58,12 +60,12 @@ const AboutPage = () => {
 
                 <div className="mt-20 p-8 rounded-2xl bg-slate-900/90 backdrop-blur-xl text-white text-center relative overflow-hidden border border-slate-700">
                     <div className="relative z-10">
-                        <h2 className="text-3xl font-bold mb-4">Ready to Transform Diagnostics?</h2>
+                        <h2 className="text-3xl font-bold mb-4">{t('about.ready_title')}</h2>
                         <p className="text-slate-300 mb-8 max-w-xl mx-auto">
-                            Join the growing network of hospitals relying on PneumaScan.
+                            {t('about.ready_subtitle')}
                         </p>
                         <button className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-lg shadow-teal-500/20">
-                            Contact Sales
+                            {t('about.contact_sales')}
                         </button>
                     </div>
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl"></div>

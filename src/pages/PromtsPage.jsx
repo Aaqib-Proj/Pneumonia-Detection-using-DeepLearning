@@ -1,31 +1,33 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Card from '../components/Card';
 import { Terminal, Code, Sparkles } from 'lucide-react';
 
 const PromtsPage = () => {
+    const { t } = useTranslation();
     return (
         <div className="min-h-screen pt-24 pb-12">
             <div className="container mx-auto px-4">
-                <h1 className="text-4xl font-bold mb-8 text-center">AI <span className="text-gradient">Prompts</span> & Insights</h1>
+                <h1 className="text-4xl font-bold mb-8 text-center">{t('prompts.title')} <span className="text-gradient">{t('prompts.title_span')}</span> {t('prompts.title_end')}</h1>
                 <p className="text-center text-gray-500 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
-                    Explore how our AI models interpret medical data. These prompts demonstrate the logical reasoning behind our Explainable AI (XAI) engine.
+                    {t('prompts.subtitle')}
                 </p>
 
                 <div className="grid gap-6 max-w-4xl mx-auto">
                     {[
                         {
-                            title: "Opacity Detection",
-                            prompt: "Analyze the right upper lobe for increased opacity consistent with consolidation. Compare density against healthy lung tissue baseline.",
+                            title: t('prompts.opacity_title'),
+                            prompt: t('prompts.opacity_prompt'),
                             icon: Terminal
                         },
                         {
-                            title: "Feature Segmentation",
-                            prompt: "Segment the lung fields and exclude the cardiac silhouette and diaphragm. Identify regions of interest (ROI) with texture anomalies.",
+                            title: t('prompts.segment_title'),
+                            prompt: t('prompts.segment_prompt'),
                             icon: Code
                         },
                         {
-                            title: "Severity Assessment",
-                            prompt: "Calculate the percentage of lung area affected. Classify severity as mild, moderate, or severe based on opacity distribution.",
+                            title: t('prompts.severity_title'),
+                            prompt: t('prompts.severity_prompt'),
                             icon: Sparkles
                         }
                     ].map((item, i) => (
@@ -43,18 +45,18 @@ const PromtsPage = () => {
                     ))}
                 </div>
                 <div className="mt-20">
-                    <h2 className="text-2xl font-bold mb-6 text-center">Why do these Prompts Matter?</h2>
+                    <h2 className="text-2xl font-bold mb-6 text-center">{t('prompts.why_matter')}</h2>
                     <div className="grid md:grid-cols-2 gap-8">
                         <Card>
-                            <h3 className="font-bold text-lg mb-2 text-emerald-500">Explainable AI (XAI)</h3>
+                            <h3 className="font-bold text-lg mb-2 text-emerald-500">{t('prompts.xai_title')}</h3>
                             <p className="text-gray-600 dark:text-gray-300">
-                                In healthcare, a "black box" prediction isn't enough. By standardizing the prompts our AI uses to "think," we can verify that the model is looking at the correct anatomical features, not artifacts.
+                                {t('prompts.xai_desc')}
                             </p>
                         </Card>
                         <Card>
-                            <h3 className="font-bold text-lg mb-2 text-blue-500">Standardization</h3>
+                            <h3 className="font-bold text-lg mb-2 text-blue-500">{t('prompts.standard_title')}</h3>
                             <p className="text-gray-600 dark:text-gray-300">
-                                Specific prompts ensure consistent analysis across different machines and patient demographics, reducing bias and improving the reliability of the diagnostic support tool.
+                                {t('prompts.standard_desc')}
                             </p>
                         </Card>
                     </div>

@@ -83,7 +83,7 @@ const DashboardPage = () => {
                 }
             } catch (err) {
                 console.error("AI Fetch Error:", err);
-                setExplanationError("AI Engine is temporarily unavailable. Please retry in a moment.");
+                setExplanationError(t('dashboard.ai_unavailable'));
             }
         };
 
@@ -128,9 +128,9 @@ const DashboardPage = () => {
 
     useEffect(() => {
         setActions([
-            { label: 'Download PDF', icon: Download, onClick: handleDownloadPDF },
-            { label: 'Share Results', icon: Share2, onClick: handleShare },
-            { label: 'Print', icon: Printer, onClick: handlePrint }
+            { label: t('dashboard.download_pdf'), icon: Download, onClick: handleDownloadPDF },
+            { label: t('dashboard.share_results'), icon: Share2, onClick: handleShare },
+            { label: t('dashboard.print_label'), icon: Printer, onClick: handlePrint }
         ]);
         return () => setActions([]);
     }, [setActions, report, patientData]);
@@ -228,7 +228,7 @@ const DashboardPage = () => {
                                 <div className="flex items-center gap-4">
                                     {viewMode === 'heatmap' && (
                                         <div className="hidden sm:flex items-center gap-3 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10">
-                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Opacity</span>
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('dashboard.opacity_slider')}</span>
                                             <input
                                                 type="range" min="0" max="1" step="0.1"
                                                 value={heatmapOpacity}
@@ -248,11 +248,11 @@ const DashboardPage = () => {
                                     <div className="grid grid-cols-2 w-full h-full gap-px bg-white/5">
                                         <div className="relative h-full flex items-center justify-center">
                                             <img src={originalImageSrc} className="max-w-full max-h-full object-contain" alt="Original" />
-                                            <div className="absolute top-4 left-4 px-2 py-1 bg-black/60 backdrop-blur rounded text-[10px] font-black text-white uppercase tracking-widest">Original Scan</div>
+                                            <div className="absolute top-4 left-4 px-2 py-1 bg-black/60 backdrop-blur rounded text-[10px] font-black text-white uppercase tracking-widest">{t('dashboard.original_scan')}</div>
                                         </div>
                                         <div className="relative border-l border-white/10 h-full flex items-center justify-center">
                                             <img src={heatmapSrc} className="max-w-full max-h-full object-contain" alt="Heatmap" />
-                                            <div className="absolute top-4 left-4 px-2 py-1 bg-emerald-600/80 backdrop-blur rounded text-[10px] font-black text-white uppercase tracking-widest">AI Heatmap Result</div>
+                                            <div className="absolute top-4 left-4 px-2 py-1 bg-emerald-600/80 backdrop-blur rounded text-[10px] font-black text-white uppercase tracking-widest">{t('dashboard.ai_heatmap')}</div>
                                         </div>
                                     </div>
                                 ) : (
@@ -280,15 +280,15 @@ const DashboardPage = () => {
                                 </h3>
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800">
-                                        <span className="text-xs font-bold text-slate-500">Opacity Severity Score</span>
+                                        <span className="text-xs font-bold text-slate-500">{t('dashboard.severity_score')}</span>
                                         <span className="text-sm font-black text-slate-900 dark:text-white">{report?.quantitative?.total_opacity_score || '0.0'}</span>
                                     </div>
                                     <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800">
-                                        <span className="text-xs font-bold text-slate-500">Lung Surface Affected</span>
+                                        <span className="text-xs font-bold text-slate-500">{t('dashboard.lung_surface')}</span>
                                         <span className="text-sm font-black text-slate-900 dark:text-white">{report?.quantitative?.lung_involvement || '0%'}</span>
                                     </div>
                                     <div className="pt-2">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Regional Risk Heat</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">{t('dashboard.regional_heat')}</p>
                                         <div className="space-y-2">
                                             {report?.quantitative?.breakdown?.slice(0, 3).map((item, i) => (
                                                 <div key={i} className="flex items-center gap-3">
@@ -329,7 +329,7 @@ const DashboardPage = () => {
                                                     return (
                                                         <div className="space-y-8">
                                                             <div>
-                                                                <h4 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Radiographic Observations</h4>
+                                                                <h4 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">{t('dashboard.rad_obs')}</h4>
                                                                 <div className="grid md:grid-cols-1 gap-3">
                                                                     {data.radiographic_observations?.map((obs, i) => (
                                                                         <div key={i} className="flex gap-4 p-3 rounded-xl bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5">
@@ -342,13 +342,13 @@ const DashboardPage = () => {
 
                                                             <div className="grid md:grid-cols-2 gap-8">
                                                                 <div>
-                                                                    <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-4">Neural Heatmap Correlation</h4>
+                                                                    <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-4">{t('dashboard.heatmap_corr')}</h4>
                                                                     <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 text-sm text-slate-600 dark:text-slate-400 italic leading-relaxed">
                                                                         {data.heatmap_correlation}
                                                                     </div>
                                                                 </div>
                                                                 <div>
-                                                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Interpreted Pathology</h4>
+                                                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">{t('dashboard.int_pathology')}</h4>
                                                                     <div className="p-4 rounded-xl bg-slate-900 text-white text-sm font-bold shadow-xl">
                                                                         {data.clinical_summary}
                                                                     </div>
@@ -356,7 +356,7 @@ const DashboardPage = () => {
                                                             </div>
 
                                                             <div>
-                                                                <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mb-4">Clinical Guidance</h4>
+                                                                <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mb-4">{t('dashboard.clin_guidance')}</h4>
                                                                 <div className="flex flex-wrap gap-3">
                                                                     {data.next_steps?.map((step, i) => (
                                                                         <div key={i} className="px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider">
@@ -382,7 +382,7 @@ const DashboardPage = () => {
                                         ) : (
                                             <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
                                                 <div className="w-12 h-12 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin"></div>
-                                                <p className="text-slate-400 italic font-medium">Groq Llama 4 Vision is reasoning through the radiographic specificities...</p>
+                                                <p className="text-slate-400 italic font-medium">{t('dashboard.ai_reasoning')}</p>
                                             </div>
                                         )}
                                     </div>
@@ -390,11 +390,11 @@ const DashboardPage = () => {
                                 <div className="mt-6 flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-t border-slate-100 dark:border-white/5 pt-6">
                                     <div className="flex items-center gap-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                        Model: Llama 4 Scout 17B (LPU)
+                                        {t('dashboard.model_info')}
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                        Scope: Multimodal Reasoning
+                                        {t('dashboard.scope_info')}
                                     </div>
                                 </div>
                             </div>
@@ -407,7 +407,7 @@ const DashboardPage = () => {
                         <Card className="p-8 border-none shadow-xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 text-white relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-[40px]"></div>
                             <div className="relative z-10 text-center">
-                                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-8">Classification Confidence</h3>
+                                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-8">{t('dashboard.class_conf')}</h3>
 
                                 <div className="inline-block relative">
                                     <svg viewBox="0 0 100 100" className="w-40 h-40">
@@ -460,7 +460,7 @@ const DashboardPage = () => {
                                     </div>
                                     <div className="flex items-center justify-center gap-2 mt-4">
                                         <div className={`w-2 h-2 rounded-full ${isPneumonia ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`}></div>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detection Mode: {report?.meta?.model || 'Vision Transformer'}</span>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('dashboard.detect_mode')}: {report?.meta?.model || 'Vision Transformer'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -469,7 +469,7 @@ const DashboardPage = () => {
                         {/* Area Chart Card */}
                         <Card className="p-6 border-slate-100 dark:border-slate-800 shadow-sm">
                             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center justify-between">
-                                Lobe Participation Map
+                                {t('dashboard.lobe_map')}
                                 <Scale size={14} className="text-slate-300" />
                             </h3>
                             <div className="h-44">
@@ -504,7 +504,7 @@ const DashboardPage = () => {
                                     </p>
                                 </div>
                                 <div className="space-y-4">
-                                    {['Clinical Correlation', 'Pathology Review', 'Follow-up Imaging'].map((label, i) => (
+                                    {[t('dashboard.clin_corr'), t('dashboard.path_review'), t('dashboard.follow_up')].map((label, i) => (
                                         <div key={i} className="flex items-center gap-4 text-sm font-black text-slate-300">
                                             <div className="w-6 h-6 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                                                 <CheckCircle2 size={14} className="text-emerald-400" />
@@ -521,13 +521,12 @@ const DashboardPage = () => {
                 {/* Footer Disclaimer */}
                 <div className="mt-12 text-center max-w-2xl mx-auto space-y-4">
                     <p className="text-[10px] text-slate-400 leading-relaxed max-w-md mx-auto italic">
-                        The AI analysis provided here is for assistive screening. It is not a definitive diagnosis.
-                        False positives/negatives may occur in atypical presentations.
+                        {t('dashboard.disclaimer_text')}
                     </p>
                     <div className="flex items-center justify-center gap-8 opacity-20 grayscale">
-                        <span className="text-xs font-black tracking-tighter">DICOM COMPLIANT</span>
-                        <span className="text-xs font-black tracking-tighter">ISO 13485 (REF)</span>
-                        <span className="text-xs font-black tracking-tighter">CE / MEDICAL AI</span>
+                        <span className="text-xs font-black tracking-tighter">{t('dashboard.dicom')}</span>
+                        <span className="text-xs font-black tracking-tighter">{t('dashboard.iso')}</span>
+                        <span className="text-xs font-black tracking-tighter">{t('dashboard.ce')}</span>
                     </div>
                 </div>
             </div>
