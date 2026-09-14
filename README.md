@@ -1,16 +1,35 @@
-# React + Vite
+# Pneumonia Detection Using Deep Learning Model
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, intuitive frontend application designed to assist in detecting pneumonia from chest X-ray images. This interface allows users to seamlessly upload X-rays, process them through an AI backend, and receive rapid diagnostic predictions with confidence scores.
 
-Currently, two official plugins are available:
+🌐 **Live Demo:** [pneumonia-frontend-theta.vercel.app](https://pneumonia-frontend-theta.vercel.app/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Key Features
 
-## React Compiler
+*   **Drag-and-Drop Uploads:** Effortlessly upload chest X-ray images (JPEG, PNG) via a clean, user-friendly interface.
+*   **Real-Time Inference:** Fast and responsive communication with the machine learning backend for instant predictions.
+*   **Explainable AI Ready:** Designed to support visual heatmaps (like Grad-CAM) alongside predictions so users can see *where* the model is looking.
+*   **Responsive UI:** Fully optimized for desktop, tablet, and mobile devices.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Technologies Used
 
-## Expanding the ESLint configuration
+*   **Frontend Framework:** React.js / Vite *(update if using Next.js)*
+*   **Styling:** Tailwind CSS *(update if using a different CSS framework)*
+*   **Deployment:** Vercel
+*   **API Communication:** Axios / Fetch API
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🚦 Getting Started
+
+Follow these instructions to set up the project on your local machine for development and testing.
+
+### Prerequisites
+
+*   Node.js (v16.0 or higher recommended)
+*   npm or yarn package manager
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/yourusername/pneumonia-frontend.git](https://github.com/yourusername/pneumonia-frontend.git)
+   cd pneumonia-frontend
