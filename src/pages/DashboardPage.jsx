@@ -449,9 +449,7 @@ const DashboardPage = () => {
 
                                 <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5">
                                     <div className={`text-2xl font-black tracking-tighter uppercase ${isPneumonia ? 'text-red-500' : 'text-emerald-500'}`}>
-                                        {report?.diagnosis?.type && report.diagnosis.type !== "None"
-                                            ? `${report.diagnosis.type} Pneumonia`
-                                            : (report?.diagnosis?.label || 'Calculating...')}
+                                        {report?.diagnosis?.label || 'Calculating...'}
                                     </div>
                                     <div className="mt-2 px-4 py-2 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
                                         <p className={`text-[10px] font-bold leading-tight ${isPneumonia ? 'text-red-400/80' : 'text-emerald-400/80'}`}>

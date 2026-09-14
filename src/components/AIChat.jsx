@@ -32,7 +32,6 @@ const AIChat = ({ report }) => {
                 Current Patient Context:
                 - Diagnosis: ${report.diagnosis?.label}
                 - Confidence: ${report.diagnosis?.confidence_display}
-                - Patient Type: ${report.diagnosis?.type}
             ` : '';
 
             const response = await fetch('http://localhost:8000/api/chat', {

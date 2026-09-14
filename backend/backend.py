@@ -86,22 +86,21 @@ class PneumaAI_Backend:
                 "modality": str(dicom.get("Modality", "CR"))
             }
             
-            # 3. Handle Image Data (DICOM is often 16-bit, we need 8-bit for AI)
+            
             img = dicom.pixel_array.astype(float)
             
             # Normalize to 0-255 range
             img = (np.maximum(img, 0) / img.max()) * 255.0
             img = np.uint8(img)
             
-            # Convert to PIL RGB (Model expects 3 channels)
+          
             img_pil = Image.fromarray(img).convert('RGB')
             
             print(f"   ℹ️ DICOM Loaded: {meta['name']} ({meta['age']}y)")
             return img_pil, meta
             
         except Exception as e:
-            # If it fails, it's likely just a JPG/PNG, not a DICOM
-            # print(f"DICOM Load Failed: {e}") 
+           
             return None, None
 
     def enhance_clinical_image(self, image_bytes):
@@ -216,30 +215,30 @@ class PneumaAI_Backend:
         else:
             lobe_name = worst_lobe['region']
             if p_type == "Bacterial":
-                type_msg = "Bacterial Pneumonia (requires antibiotics)"
+                type_msg = "Pneumonia (requires antibiotics)"
                 if conf_score < 0.75:
                     sev = "Low"
-                    rec = f"Mild focal consolidation in {lobe_name} Lobe. Probable early Bacterial Pneumonia. Clinical correlation and potential antibiotic therapy recommended."
+                    rec = f"Mild focal consolidation in {lobe_name} Lobe. Probable early Pneumonia. Clinical correlation and potential antibiotic therapy recommended."
                 elif conf_score < 0.90:
                     sev = "Moderate"
-                    rec = f"Significant focal consolidation in {lobe_name} Lobe. Classical Bacterial Pneumonia pattern. Prompt Pulmonology referral and antibiotic regimen suggested."
+                    rec = f"Significant focal consolidation in {lobe_name} Lobe. Classical Pneumonia pattern. Prompt Pulmonology referral and antibiotic regimen suggested."
                 else:
                     sev = "Severe"
-                    rec = f"URGENT: Extensive air-space opacification in {lobe_name} Lobe. High suspicion of acute Bacterial Pneumonia. Immediate clinical stabilization and IV antibiotics required."
+                    rec = f"URGENT: Extensive air-space opacification in {lobe_name} Lobe. High suspicion of acute Pneumonia. Immediate clinical stabilization and IV antibiotics required."
             else: # Viral
-                type_msg = "Viral Pneumonia (supportive care)"
+                type_msg = "Pneumonia (supportive care)"
                 if conf_score < 0.75:
                     sev = "Low"
-                    rec = f"Mild interstitial opacities in {lobe_name} Lobe. Suggestive of early Viral Pneumonia. Monitor oxygen saturation and provide supportive care."
+                    rec = f"Mild interstitial opacities in {lobe_name} Lobe. Suggestive of early Pneumonia. Monitor oxygen saturation and provide supportive care."
                 elif conf_score < 0.90:
                     sev = "Moderate"
-                    rec = f"Diffuse interstitial infiltrates noted in {lobe_name} Lobe. Pattern consistent with Viral Pneumonia. Supportive therapy and rest indicated."
+                    rec = f"Diffuse interstitial infiltrates noted in {lobe_name} Lobe. Pattern consistent with Pneumonia. Supportive therapy and rest indicated."
                 else:
                     sev = "Severe"
-                    rec = f"URGENT: Widespread ground-glass opacities in {lobe_name} Lobe. Severe Viral Pneumonia / Pneumonitis. Critical care consultation for respiratory support recommended."
+                    rec = f"URGENT: Widespread ground-glass opacities in {lobe_name} Lobe. Severe Pneumonia / Pneumonitis. Critical care consultation for respiratory support recommended."
 
             return {
-                "findings": f"Multifocal or focal opacity observed predominantly in the {lobe_name} Lobe. The radiographic appearance is highly suggestive of {sev.lower()} {p_type.lower()} inflammatory infiltrate.",
+                "findings": f"Multifocal or focal opacity observed predominantly in the {lobe_name} Lobe. The radiographic appearance is highly suggestive of {sev.lower()} inflammatory infiltrate.",
                 "heart": "Cardiac borders may be partially obscured by adjacent infiltrate.",
                 "diaphragm": "Trace blunting of the costophrenic angle on the affected side.",
                 "recommendation": rec
@@ -267,11 +266,12 @@ class PneumaAI_Backend:
             prompt = f"""
             ROLE: Senior Board-Certified Radiologist & Consultant Pulmonologist.
             CONTEXT: Clinical Chest X-ray analysis + Grad-CAM Heatmap correlation.
-            DIAGNOSIS: {diagnosis_info['label']} ({diagnosis_info['type']})
+            DIAGNOSIS: {diagnosis_info['label']}
             AI CONFIDENCE: {diagnosis_info['confidence_display']}
 
             MANDATE: Output a formal, structured clinical report in JSON format. 
             Use dense medical terminology (e.g., 'reticulonodular opacities', 'hilar lymphadenopathy'). 
+            Do NOT mention whether it is Bacterial or Viral in the observations or summary.
             Do NOT mention being an AI.
 
             JSON STRUCTURE REQUIRED:
@@ -381,7 +381,7 @@ class PneumaAI_Backend:
         else:
             label = "Pneumonia"
             p_type = p_type_pred
-            message = f"{p_type_pred} Pneumonia detected ({conf_score:.1%} confidence)"
+            message = f"Pneumonia detected ({conf_score:.1%} confidence)"
         
         # --- 4. EXPLAIN ---
         heatmap_grid = active_explainer.generate_cam(tensor, target_class=class_idx.item())

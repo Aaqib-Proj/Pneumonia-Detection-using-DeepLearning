@@ -95,9 +95,7 @@ const MedicalReport = forwardRef(({ data, imageSrc, patientData, report }, ref) 
                     <div className="bg-slate-900 rounded-2xl p-6 text-white text-center flex flex-col items-center justify-center">
                         <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">{t('report.diagnosis')}</h3>
                         <div className={`text-xl font-black uppercase mb-1 ${isPneumonia ? 'text-red-400' : 'text-emerald-400'}`}>
-                            {report?.diagnosis?.type && report.diagnosis.type !== "None"
-                                ? `${report.diagnosis.type} Pneumonia`
-                                : (report?.diagnosis?.label === "Pneumonia" ? t('nav.history').split(' ')[0] : report?.diagnosis?.label || '--')}
+                            {report?.diagnosis?.label === "Pneumonia" ? t('nav.history').split(' ')[0] : report?.diagnosis?.label || '--'}
                         </div>
                         <div className="text-3xl font-black tracking-tighter mb-1">
                             {formatConfidence(report?.diagnosis?.confidence)}
