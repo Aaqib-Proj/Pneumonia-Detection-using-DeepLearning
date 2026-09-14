@@ -31,5 +31,5 @@ Follow these instructions to set up the project on your local machine for develo
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/yourusername/pneumonia-frontend.git](https://github.com/yourusername/pneumonia-frontend.git)
+   git clone https://github.com/Aaqib-Proj/Pneumonia-Detection-using-DeepLearning.git
    cd pneumonia-frontend
